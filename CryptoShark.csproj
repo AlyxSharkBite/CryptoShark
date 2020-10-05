@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CodePage>65001</CodePage>
+    <ReleaseVersion>1.0</ReleaseVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DocumentationFile>bin\Debug\netcoreapp3.1\CrytoShark.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.8" />
+    <PackageReference Include="System.Security.Cryptography.Cng" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Dto\" />
+    <Folder Include="Engine\" />
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <DotNetNamingPolicy ResourceNamePolicy="FileFormatDefault" DirectoryNamespaceAssociation="PrefixedHierarchical" />
+          <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/plain" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+</Project>
