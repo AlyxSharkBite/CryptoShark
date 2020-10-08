@@ -14,7 +14,7 @@ The concept is to have a simple and powerful took for Data Encryption with cross
 
 [BouncyCastle](https://www.bouncycastle.org) is the core of the Encryption and Decryption removing any concerns of export restrictions. 
 
-Encryption is done with a 256 Bit Cipher using Galois/Counter Mode (GCM).  The following encryption algorithms are supported:
+Encryption is done with a 256 Bit Key using Galois/Counter Mode (GCM).  The following encryption algorithms are supported:
 
 * [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard)
 * [Camellia](https://en.wikipedia.org/wiki/Camellia_(cipher))
