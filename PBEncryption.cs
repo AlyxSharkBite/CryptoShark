@@ -50,8 +50,7 @@ namespace CryptoShark
         /// <param name="nonce">GCM Nonce Token</param>
         /// <param name="salt">PBKDF2 Salt</param>
         /// <param name="hash">Hash of Decrypted Data</param>
-        /// <param name="itterations">Itterations for the PBKDF2 Key Derivation</param>        
-        /// <param name="validateHash">Set to false to skip validation of the Hash</param>
+        /// <param name="itterations">Itterations for the PBKDF2 Key Derivation</param>                
         /// <returns></returns>
         public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> cipherData,
             string password,

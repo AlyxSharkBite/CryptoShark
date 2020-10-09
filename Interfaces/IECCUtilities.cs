@@ -1,6 +1,9 @@
 ﻿using System;
 namespace CryptoShark.Interfaces
 {
+    /// <summary>
+    ///     Eliptical Curve Utilites 
+    /// </summary>
     public interface IECCUtilities
     {
         /// <summary>

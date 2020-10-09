@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace CryptoShark.Dto
 {
+    ///<inheritdoc/>
     public class PBEncryptionResult : EncryptionResult
     {
         private readonly byte[] _hmac;

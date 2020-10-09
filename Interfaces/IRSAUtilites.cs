@@ -1,6 +1,9 @@
 ﻿using System;
 namespace CryptoShark.Interfaces
 {
+    /// <summary>
+    ///     RSA Utilites 
+    /// </summary>
     public interface IRSAUtilites
     {
         /// <summary>

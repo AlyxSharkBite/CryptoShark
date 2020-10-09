@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace CryptoShark.Dto
 {
+    ///<inheritdoc/>
     public class RSAEncryptionResult : EncryptionResult
     {
         private readonly byte[] _rsaPublicKey;

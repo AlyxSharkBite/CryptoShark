@@ -4,6 +4,9 @@ using Newtonsoft.Json.Linq;
 
 namespace CryptoShark.Dto
 {
+    /// <summary>
+    ///     Encryption Results
+    /// </summary>
     public abstract class EncryptionResult
     {
         private readonly byte[] _encryptedData;
@@ -29,6 +32,12 @@ namespace CryptoShark.Dto
         [JsonIgnore]
         public EncryptionAlgorithm Algorithm => _encryptionAlgorithm;
 
+        /// <summary>
+        ///     Constructor
+        /// </summary>
+        /// <param name="encryptedData"></param>
+        /// <param name="gcmNonce"></param>
+        /// <param name="encryptionAlgorithm"></param>
         protected EncryptionResult(ReadOnlySpan<byte> encryptedData, ReadOnlySpan<byte> gcmNonce, EncryptionAlgorithm encryptionAlgorithm)
         {
             this._encryptedData = encryptedData.ToArray();
@@ -42,6 +51,10 @@ namespace CryptoShark.Dto
         /// <returns></returns>
         public abstract string ToJson();
 
+        /// <summary>
+        ///     Gets the Base Class JSON
+        /// </summary>
+        /// <returns></returns>
         protected virtual JObject GetBaseJson()
         {
             JObject returnData = new JObject();
