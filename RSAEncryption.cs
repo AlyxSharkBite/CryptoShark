@@ -11,6 +11,7 @@ namespace CryptoShark
     public class RsaEncryption
     {
         private const int _keySize = 256;
+        private IHash _hash => Utilities.Instance;
 
         /// <summary>
         ///     RSA Utilities 
@@ -88,33 +89,33 @@ namespace CryptoShark
         /// <summary>
         ///     Decrypts Previously Encrypted Data
         /// </summary>
-        /// <param name="cipherData">Encrypted Data</param>
+        /// <param name="encryptedData">Encrypted Data</param>
         /// <param name="rsaPublicKey">Publi Key to Verify Signature WITH</param>
         /// <param name="rsaPrivateKey">Private Key to Decrypt WITH</param>
         /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
-        /// <param name="nonce">Nonce Token</param>
-        /// <param name="signature">Signature</param>
-        /// <param name="encryptedKey">Encrypted Encryptuion Key</param>
+        /// <param name="gcmNonce">Nonce Token</param>
+        /// <param name="rsaSignature">Signature</param>
+        /// <param name="rsaEncryptedKey">Encrypted Encryptuion Key</param>
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> cipherData,
+        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData,
             ReadOnlySpan<byte> rsaPublicKey,
             ReadOnlySpan<byte> rsaPrivateKey,            
             EncryptionAlgorithm encryptionAlgorithm,
-            ReadOnlySpan<byte> nonce,
-            ReadOnlySpan<byte> signature,
-            ReadOnlySpan<byte> encryptedKey)
+            ReadOnlySpan<byte> gcmNonce,
+            ReadOnlySpan<byte> rsaSignature,
+            ReadOnlySpan<byte> rsaEncryptedKey)
         {
             var engine = new EncryptionEngine(encryptionAlgorithm);
 
             // Decrypt Key and Nonce
-            nonce = DecryptNonce(nonce, rsaPrivateKey);
-            var key = DecryptKey(encryptedKey, rsaPrivateKey);
+            gcmNonce = DecryptNonce(gcmNonce, rsaPrivateKey);
+            var key = DecryptKey(rsaEncryptedKey, rsaPrivateKey);
 
             // Decrypt the Data
-            var clearData = engine.Decrypt(cipherData, key, nonce);
+            var clearData = engine.Decrypt(encryptedData, key, gcmNonce);
 
             // Validate Hash
-            if (!VerifyHash(ComputeHash(clearData), signature, rsaPublicKey))
+            if (!VerifyHash(ComputeHash(clearData), rsaSignature, rsaPublicKey))
                 throw new CryptographicException("Invalid Signature");
 
             return clearData;
@@ -123,35 +124,35 @@ namespace CryptoShark
         /// <summary>
         ///     Decrypts Previously Encrypted Data
         /// </summary>
-        /// <param name="cipherData">Encrypted Data</param>
+        /// <param name="encryptedData">Encrypted Data</param>
         /// <param name="rsaPublicKey">Publi Key to Verify Signature WITH</param>
         /// <param name="rsaPrivateKey">Private Key to Decrypt WITH</param>
         /// <param name="rsaKeyPassword">Password for RSA Private Key</param>
         /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
-        /// <param name="nonce">Nonce Token</param>
-        /// <param name="signature">Signature</param>
-        /// <param name="encryptedKey">Encrypted Encryptuion Key</param>
+        /// <param name="gcmNonce">Nonce Token</param>
+        /// <param name="rsaSignature">Signature</param>
+        /// <param name="rsaEncryptedKey">Encrypted Encryptuion Key</param>
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> cipherData,
+        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData,
             ReadOnlySpan<byte> rsaPublicKey,
             ReadOnlySpan<byte> rsaPrivateKey,
             string rsaKeyPassword,
             EncryptionAlgorithm encryptionAlgorithm,
-            ReadOnlySpan<byte> nonce,
-            ReadOnlySpan<byte> signature,
-            ReadOnlySpan<byte> encryptedKey)
+            ReadOnlySpan<byte> gcmNonce,
+            ReadOnlySpan<byte> rsaSignature,
+            ReadOnlySpan<byte> rsaEncryptedKey)
         {
             var engine = new EncryptionEngine(encryptionAlgorithm);
 
             // Decrypt Key and Nonce
-            nonce = DecryptNonce(nonce, rsaPrivateKey, rsaKeyPassword);
-            var key = DecryptKey(encryptedKey, rsaPrivateKey, rsaKeyPassword);
+            gcmNonce = DecryptNonce(gcmNonce, rsaPrivateKey, rsaKeyPassword);
+            var key = DecryptKey(rsaEncryptedKey, rsaPrivateKey, rsaKeyPassword);
 
             // Decrypt the Data
-            var clearData = engine.Decrypt(cipherData, key, nonce);
+            var clearData = engine.Decrypt(encryptedData, key, gcmNonce);
 
             // Validate Hash
-            if (!VerifyHash(ComputeHash(clearData), signature, rsaPublicKey))
+            if (!VerifyHash(ComputeHash(clearData), rsaSignature, rsaPublicKey))
                 throw new CryptographicException("Invalid Signature");
 
             return clearData;
@@ -233,10 +234,7 @@ namespace CryptoShark
 
         private ReadOnlySpan<byte> ComputeHash(ReadOnlySpan<byte> data)
         {
-            using(var hash = SHA384.Create())
-            {
-                return hash.ComputeHash(data.ToArray());
-            }
+            return _hash.Hash(data, HashAlgorithm.SHA2_384);
         }
 
         private ReadOnlySpan<byte> SignHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> rsaPrivateKey)

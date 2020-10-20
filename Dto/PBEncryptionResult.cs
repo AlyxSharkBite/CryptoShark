@@ -47,7 +47,7 @@ namespace CryptoShark.Dto
             returnData.Add(new JProperty("PbkdfSalt", this._pbkdfSalt));
             returnData.Add(new JProperty("itterations", this._itterations));
 
-            returnData.Add(new JProperty("Sha3Hash",
+            returnData.Add(new JProperty("HmacSha384Hash",
                 BitConverter.ToString(this._hmac)
                 .Replace("-", String.Empty)
                 .ToLower()));

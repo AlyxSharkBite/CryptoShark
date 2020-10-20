@@ -31,6 +31,7 @@ byte[] data = new byte[4096];`
 
             // Encrypt
             CryptoShark.PBEncryption encryption = new CryptoShark.PBEncryption();
+
             var encrypted = encryption.Encrypt(data, password, CrytoShark.EncryptionAlgorithm.TwoFish);
 
             // Decrypt
@@ -70,6 +71,12 @@ byte[] data = new byte[4096];`
                 encrypted.RSASignature,
                 encrypted.EncryptionKey);
 
+
+### Hashing
+*CryptoShark has a Hashing engine supporting most common Hash Algorithms*
+The CryptoShark.HashUtilites has two static methods for hashing data.
+One returns a string in the specified encoding (Hex, Base64 or Bas64Url)
+The other a ReadOnlySpan<byte> 
 
                 
 ## Future Development        

@@ -5,7 +5,7 @@ using CryptoShark.Interfaces;
 
 namespace CryptoShark
 {
-    internal class Utilities : IRSAUtilites
+    internal class Utilities : IRSAUtilites, IHash
     {
         private static Lazy<Utilities> _utilities = new Lazy<Utilities>(() => new Utilities(), true);
         public static Utilities Instance => _utilities.Value;
@@ -121,6 +121,23 @@ namespace CryptoShark
                 return null;
             }
         }
-        #endregion       
+        #endregion
+
+        #region IHash
+        ///<inheritdoc/>
+        string IHash.Hash(ReadOnlySpan<byte> data, StringEncoding encoding, HashAlgorithm hashAlgorithm)
+        {
+            var engine = new Engine.HashEngine(hashAlgorithm);
+            return engine.Hash(data, encoding);
+        }
+
+        ///<inheritdoc/>
+        ReadOnlySpan<byte> IHash.Hash(ReadOnlySpan<byte> data, HashAlgorithm hashAlgorithm)
+        {
+            var engine = new Engine.HashEngine(hashAlgorithm);
+            return engine.Hash(data);
+        }
+        #endregion
+
     }
 }

@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using Org.BouncyCastle.Crypto.Generators;
 using CryptoShark.Engine;
+using System.Text;
 
 namespace CryptoShark
 {
@@ -44,35 +45,35 @@ namespace CryptoShark
         /// <summary>
         ///     Decrypts the previously encypted data
         /// </summary>
-        /// <param name="cipherData">Encrypted Data</param>
+        /// <param name="encryptedData">Encrypted Data</param>
         /// <param name="password">Password</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
-        /// <param name="nonce">GCM Nonce Token</param>
-        /// <param name="salt">PBKDF2 Salt</param>
-        /// <param name="hash">Hash of Decrypted Data</param>
+        /// <param name="algorithm">Encryption Algorithm</param>
+        /// <param name="gcmNonce">GCM Nonce Token</param>
+        /// <param name="pbkdfSalt">PBKDF2 Salt</param>
+        /// <param name="sha384Hmac">Hash of Decrypted Data</param>
         /// <param name="itterations">Itterations for the PBKDF2 Key Derivation</param>                
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> cipherData,
+        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData,
             string password,
-            EncryptionAlgorithm encryptionAlgorithm,
-            ReadOnlySpan<byte> nonce,
-            ReadOnlySpan<byte> salt,
-            ReadOnlySpan<byte> hash,
+            EncryptionAlgorithm algorithm,
+            ReadOnlySpan<byte> gcmNonce,
+            ReadOnlySpan<byte> pbkdfSalt,
+            ReadOnlySpan<byte> sha384Hmac,
             int itterations)
         {
             // Create the Engine
-            var engine = new EncryptionEngine(encryptionAlgorithm);
+            var engine = new EncryptionEngine(algorithm);
 
             // Generate the Key
-            var key = PasswordDeriveBytes(password, salt, _keySize, itterations);
+            var key = PasswordDeriveBytes(password, pbkdfSalt, _keySize, itterations);
 
             // Decrypt the Data
-            var decrypted = engine.Decrypt(cipherData, key, nonce);
+            var decrypted = engine.Decrypt(encryptedData, key, gcmNonce);
 
             // Validate Hash
             var verify = Hash(decrypted, key);
-            if (!verify.SequenceEqual(hash))
-                throw new CryptographicException($"Hash Of Decrypoted Data Does Not Match: Got 0x{BitConverter.ToString(verify.ToArray()).Replace("-", String.Empty)} Exptected {BitConverter.ToString(hash.ToArray()).Replace("-", String.Empty)}");
+            if (!verify.SequenceEqual(sha384Hmac))
+                throw new CryptographicException($"Hash Of Decrypoted Data Does Not Match: Got 0x{BitConverter.ToString(verify.ToArray()).Replace("-", String.Empty)} Exptected {BitConverter.ToString(sha384Hmac.ToArray()).Replace("-", String.Empty)}");
             
             return decrypted;            
         }
@@ -94,10 +95,15 @@ namespace CryptoShark
         
         private ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
         {
-            using (var hash = new HMACSHA384(key.ToArray()))
-            {
-                return hash.ComputeHash(data.ToArray());
-            }
+            var hmac = new Org.BouncyCastle.Crypto.Macs.HMac(new Org.BouncyCastle.Crypto.Digests.Sha384Digest());
+            byte[] result = new byte[hmac.GetMacSize()];
+
+            hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key.ToArray()));
+
+            hmac.BlockUpdate(data.ToArray(), 0, data.Length);
+            hmac.DoFinal(result, 0);
+
+            return result;
         }
 
     }
