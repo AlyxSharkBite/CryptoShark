@@ -7,7 +7,7 @@ Data Encryption Package for .NET 6
 * Password Based Encryption
 * RSA Public/Private Key Encryption
 
-**Version 2.1 - Update March 20232**
+**Version 2.1 - Update March 2022**
 
 * .NET 6 Update
 * Added ECC Encryption 
@@ -101,7 +101,7 @@ byte[] data = new byte[4096];`
                 key1,
                 encrypted.Algorithm,
                 encrypted.GcmNonce,
-                encrypted.RSASignature);
+                encrypted.ECCSignature);
 
 ### Hashing
 *CryptoShark has a Hashing engine supporting most common Hash Algorithms*
