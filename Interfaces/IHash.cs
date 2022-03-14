@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CryptoShark.Enums;
+using System;
 namespace CryptoShark.Interfaces
 {
     /// <summary>
@@ -22,5 +23,24 @@ namespace CryptoShark.Interfaces
         /// <param name="hashAlgorithm"></param>
         /// <returns></returns>
         ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data, HashAlgorithm hashAlgorithm);
+
+        /// <summary>
+        ///     HMAC Hash
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="key"></param>
+        /// <param name="hashAlgorithm"></param>
+        /// <returns></returns>
+        ReadOnlySpan<byte> Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, HashAlgorithm hashAlgorithm);
+
+        /// <summary>
+        ///     HMAC Hash
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="key"></param>
+        /// <param name="encoding"></param>
+        /// <param name="hashAlgorithm"></param>
+        /// <returns></returns>
+        string Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, StringEncoding encoding, HashAlgorithm hashAlgorithm);
     }
 }

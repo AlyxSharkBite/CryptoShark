@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
 
 namespace CryptoShark.Dto
@@ -8,52 +9,54 @@ namespace CryptoShark.Dto
     ///<inheritdoc/>
     public class PBEncryptionResult : EncryptionResult
     {
-        private readonly byte[] _hmac;
-        private readonly int _itterations;
-        private readonly byte[] _pbkdfSalt;       
-
         /// <summary>
         ///     SHA384 HMAC Hash of the Unencrypted Data        
         /// </summary>
-        [JsonIgnore]
-        public ReadOnlySpan<byte> Sha384Hmac => _hmac;
+        public byte[] Sha384Hmac { get; set; }
+
+        /// <summary>
+        ///     Salt used in the PBKDF2 Key Derivation
+        /// </summary>
+        public byte[] PbkdfSalt { get; set; }
 
         /// <summary>
         ///     Number of itterations used in the
         ///     PBKDF2 Password Derivation 
         /// </summary>
-        [JsonIgnore]
-        public int Itterations => _itterations;
-
-        /// <summary>
-        ///     Salt used in the PBKDF2 Key Derivation
-        /// </summary>
-        [JsonIgnore]
-        public ReadOnlySpan<byte> PbkdfSalt => _pbkdfSalt;
-
-        internal PBEncryptionResult(ReadOnlySpan<byte> encryptedData, ReadOnlySpan<byte> gcmNonce, EncryptionAlgorithm encryptionAlgorithm, ReadOnlySpan<byte> sha3Hash, int itterations, ReadOnlySpan<byte> pbkdfSalt)
-            : base(encryptedData, gcmNonce, encryptionAlgorithm)
-        {
-            this._hmac = sha3Hash.ToArray();
-            this._itterations = itterations;
-            this._pbkdfSalt = pbkdfSalt.ToArray();
-        }
+        public int Itterations { get; set; }
 
         ///<inheritdoc/>
-        public override string ToJson()
+        public override ReadOnlySpan<byte> Serialize()
         {
-            var returnData = GetBaseJson();            
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(outputStream))
+                using (BsonDataWriter bsonDataWriter = new BsonDataWriter(writer))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(bsonDataWriter, this, typeof(PBEncryptionResult));
+                }
 
-            returnData.Add(new JProperty("PbkdfSalt", this._pbkdfSalt));
-            returnData.Add(new JProperty("itterations", this._itterations));
+                return outputStream.ToArray();
+            }
+        }
 
-            returnData.Add(new JProperty("HmacSha384Hash",
-                BitConverter.ToString(this._hmac)
-                .Replace("-", String.Empty)
-                .ToLower()));
-
-            return JsonConvert.SerializeObject(returnData, Formatting.Indented);
-
+        /// <summary>
+        ///     Deserializes a PBEncryptionResult from byte array
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static PBEncryptionResult Deserialize(ReadOnlySpan<byte> data)
+        {
+            using (MemoryStream inputStream = new MemoryStream(data.ToArray()))
+            {
+                using (BinaryReader reader = new BinaryReader(inputStream))
+                using (BsonDataReader bsonDataReader = new BsonDataReader(reader))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    return serializer.Deserialize<PBEncryptionResult>(bsonDataReader);
+                }
+            }
         }
     }
 }

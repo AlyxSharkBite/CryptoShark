@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CryptoShark
+namespace CryptoShark.Enums
 {
     /// <summary>
     ///     String Encoding Options

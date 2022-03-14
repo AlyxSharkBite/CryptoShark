@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace CryptoShark
+namespace CryptoShark.Enums
 {
     /// <summary>
     ///     Encryption Algorithm
     /// </summary>
-    public enum EncryptionAlgorithm
+    public enum EncryptionAlgorithm : byte
     {
         /// <summary>
         ///     AES
@@ -24,7 +24,7 @@ namespace CryptoShark
         ///     https://en.wikipedia.org/wiki/CAST-256
         /// </summary>
         CAST6,
-       
+
         /// <summary>
         ///     RC6
         ///     https://en.wikipedia.org/wiki/RC6

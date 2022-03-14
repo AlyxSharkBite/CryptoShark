@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CryptoShark.Enums;
+using System;
 
 
 namespace CryptoShark.Engine
@@ -10,7 +11,7 @@ namespace CryptoShark.Engine
         public HashEngine(HashAlgorithm hashAlgorithm)
         {
             _hashAlgorithm = hashAlgorithm;
-        }
+        }        
 
         /// <summary>
         ///     Computes Hash of the data
@@ -51,6 +52,54 @@ namespace CryptoShark.Engine
             digest.DoFinal(hash, 0);
 
             return hash;
+
+        }
+
+        /// <summary>
+        ///     Computes HMAC of the data
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public ReadOnlySpan<byte> Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
+        {
+            Org.BouncyCastle.Crypto.IDigest digest = GetDigest();
+
+            var hmac = new Org.BouncyCastle.Crypto.Macs.HMac(digest);
+            byte[] result = new byte[hmac.GetMacSize()];
+
+            hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(key.ToArray()));
+
+            hmac.BlockUpdate(data.ToArray(), 0, data.Length);
+            hmac.DoFinal(result, 0);
+
+            return result;
+
+        }
+
+        /// <summary>
+        ///     Computes HMAC of the data
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="key"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public string Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, StringEncoding encoding)
+        {
+            var hashed = Hmac(data, key);
+
+            switch (encoding)
+            {
+                case StringEncoding.Hex:
+                    return Org.BouncyCastle.Utilities.Encoders.Hex.ToHexString(hashed.ToArray());
+                case StringEncoding.Base64:
+                    return Org.BouncyCastle.Utilities.Encoders.Base64.ToBase64String(hashed.ToArray());
+                case StringEncoding.UrlBase64:
+                    return Base64UrlEncode(hashed);
+
+                default:
+                    throw new ArgumentException("Invalid String Encoding");
+            }
 
         }
 

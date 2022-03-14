@@ -1,5 +1,5 @@
 # CryptoShark
-Data Encryption Package for .Net Core 3.1
+Data Encryption Package for .NET 6
 
 ## Version History
 **Version 1.0 - Initial Release**
@@ -7,8 +7,13 @@ Data Encryption Package for .Net Core 3.1
 * Password Based Encryption
 * RSA Public/Private Key Encryption
 
+**Version 2.1 - Update March 20232**
+
+* .NET 6 Update
+* Added ECC Encryption 
+
 ## About
-Code written on macOS Catalina (10.15)
+Code written on macOS Catalina (10.15) updated on Windows 11
 
 The concept is to have a simple and powerful took for Data Encryption with cross platform support (Windows, macOS, Linux).  
 
@@ -72,16 +77,35 @@ byte[] data = new byte[4096];`
                 encrypted.EncryptionKey);
 
 
+### ECC Encryption
+*This is the most simplistic example the ECCUtilites can also encrypt the ECC Private keys as well as other functions.  See documentation.*
+
+
+            // Create the ECC Encryption Object
+            CryptoShark.EccEncryption encryption = new CryptoShark.EccEncryption();
+
+            // Create a Couple ECC Keys
+            var key1 = encryption.EccUtilities.CreateEccKey(ECCurve.NamedCurves.nistP256);
+            var key2 = encryption.EccUtilities.CreateEccKey(ECCurve.NamedCurves.nistP256);
+
+            // Get the Public Keys
+            var key1Pub = encryption.ECCUtilities.GetEccPublicKey(key1);
+            var key2Pub = encryption.ECCUtilities.GetEccPublicKey(key2);
+
+            // Encrypt
+            var encrypted = encryption.Encrypt(data, key1Pub, key2, CrytoShark.EncryptionAlgorithm.TwoFish);
+
+            // Decrypt
+            var decrypted = encryption.Decrypt(encrypted.EncryptedData,
+                key2Pub,
+                key1,
+                encrypted.Algorithm,
+                encrypted.GcmNonce,
+                encrypted.RSASignature);
+
 ### Hashing
 *CryptoShark has a Hashing engine supporting most common Hash Algorithms*
 The CryptoShark.HashUtilites has two static methods for hashing data.
 One returns a string in the specified encoding (Hex, Base64 or Bas64Url)
-The other a ReadOnlySpan<byte> 
-
-                
-## Future Development        
-* Move to .Net 5 once it is released in November 2020.  
-* Elliptical Curve Cryptography
-* Add support for optional Data Compression before Encryption        
-                
+The other a ReadOnlySpan<byte>                 
                 

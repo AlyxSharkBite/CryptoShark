@@ -1,34 +1,37 @@
-﻿using System;
+﻿using CryptoShark.Enums;
+using CryptoShark.Interfaces;
+using System;
 namespace CryptoShark
 {
     /// <summary>
     ///     Class for performing Hashing
     /// </summary>
-    public sealed class HashUtilites
+    public sealed class HashUtilites : IHash
     { 
-        private static Interfaces.IHash _hash => Utilities.Instance;
+        private static IHash _hash => Utilities.Instance;
 
-        /// <summary>
-        ///     Hashes data
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="encoding"></param>
-        /// <param name="hashAlgorithm"></param>
-        /// <returns></returns>
-        public static string Hash(ReadOnlySpan<byte> data, StringEncoding encoding, HashAlgorithm hashAlgorithm)
+        ///<inheritdoc/>
+        public string Hash(ReadOnlySpan<byte> data, StringEncoding encoding, HashAlgorithm hashAlgorithm)
         {
             return _hash.Hash(data, encoding, hashAlgorithm);
         }
 
-        /// <summary>
-        ///     Hashes Data 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="hashAlgorithm"></param>
-        /// <returns></returns>
-        public static ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data, HashAlgorithm hashAlgorithm)
+        ///<inheritdoc/>
+        public ReadOnlySpan<byte> Hash(ReadOnlySpan<byte> data, HashAlgorithm hashAlgorithm)
         {
             return _hash.Hash(data, hashAlgorithm);
+        }
+
+        ///<inheritdoc/>
+        public ReadOnlySpan<byte> Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, HashAlgorithm hashAlgorithm)
+        {
+            return _hash.Hmac(data, key, hashAlgorithm);
+        }
+
+        ///<inheritdoc/>
+        public string Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, StringEncoding encoding, HashAlgorithm hashAlgorithm)
+        {
+            return _hash.Hmac(data, key, encoding, hashAlgorithm);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
+using CryptoShark.Enums;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;

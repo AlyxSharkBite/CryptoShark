@@ -8,6 +8,7 @@ namespace CryptoShark.Interfaces
     {
         /// <summary>
         ///     Creates and ECC Private Key in Pkcs8 Format
+        ///     ** On Non Windows Platforms Only The NIST Curves are Supported
         /// </summary>
         /// <param name="curve">Curve to use</param>
         /// <returns>Null on failure check LastEception</returns>
