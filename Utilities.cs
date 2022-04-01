@@ -29,6 +29,8 @@ namespace CryptoShark
 
             try
             {
+                curve.Validate();
+
                 if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                     diffieHellman = new ECDiffieHellmanCng(curve);
                 else

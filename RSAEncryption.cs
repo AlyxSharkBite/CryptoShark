@@ -26,12 +26,11 @@ namespace CryptoShark
         /// <param name="clearData">Data to encrypt</param>
         /// <param name="rsaPublicKey">RSA Key to Encrypt WITH</param>
         /// <param name="rsaPrivateKey">RSA Key to Sign WITH</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>        
+        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>       
+        /// <param name="password">OPTIONAL - Password if Private Key is Encrypted</param> 
         /// <returns></returns>
-        public Dto.RSAEncryptionResult Encrypt(ReadOnlySpan<byte> clearData,
-            ReadOnlySpan<byte> rsaPublicKey,
-            ReadOnlySpan<byte> rsaPrivateKey,
-            EncryptionAlgorithm encryptionAlgorithm)
+        public Dto.RSAEncryptionResult Encrypt(ReadOnlySpan<byte> clearData, ReadOnlySpan<byte> rsaPublicKey, ReadOnlySpan<byte> rsaPrivateKey, 
+            EncryptionAlgorithm encryptionAlgorithm, string password = null)
         {            
             var engine = new EncryptionEngine(encryptionAlgorithm);           
 
@@ -43,6 +42,10 @@ namespace CryptoShark
             // Encrypt
             var encrypted = engine.Encrypt(clearData, key, gcmNonce);
 
+            // Decrypt RSA Key ifd needed
+            if (!String.IsNullOrWhiteSpace(password))
+                rsaPrivateKey = DecrypRsatKey(rsaPrivateKey, password);
+
             // Build the response
             return new Dto.RSAEncryptionResult
             {
@@ -53,7 +56,7 @@ namespace CryptoShark
                 RSASignature = SignHash(hash, rsaPrivateKey).ToArray(),
                 EncryptionKey = EncryptKey(key, rsaPublicKey).ToArray()
             };
-        }       
+        }
 
         /// <summary>
         ///     Decrypts Previously Encrypted Data
@@ -65,16 +68,16 @@ namespace CryptoShark
         /// <param name="gcmNonce">Nonce Token</param>
         /// <param name="rsaSignature">Signature</param>
         /// <param name="rsaEncryptedKey">Encrypted Encryptuion Key</param>
+        /// <param name="password">OPTIONAL - Password if Private Key is Encrypted</param> 
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData,
-            ReadOnlySpan<byte> rsaPublicKey,
-            ReadOnlySpan<byte> rsaPrivateKey,            
-            EncryptionAlgorithm encryptionAlgorithm,
-            ReadOnlySpan<byte> gcmNonce,
-            ReadOnlySpan<byte> rsaSignature,
-            ReadOnlySpan<byte> rsaEncryptedKey)
+        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData, ReadOnlySpan<byte> rsaPublicKey, ReadOnlySpan<byte> rsaPrivateKey, 
+            EncryptionAlgorithm encryptionAlgorithm, ReadOnlySpan<byte> gcmNonce, ReadOnlySpan<byte> rsaSignature, ReadOnlySpan<byte> rsaEncryptedKey, string password = null)
         {
             var engine = new EncryptionEngine(encryptionAlgorithm);
+
+            // Decrypt RSA Key ifd needed
+            if (!String.IsNullOrWhiteSpace(password))
+                rsaPrivateKey = DecrypRsatKey(rsaPrivateKey, password);
 
             // Decrypt Key            
             var key = DecryptKey(rsaEncryptedKey, rsaPrivateKey);
@@ -238,6 +241,28 @@ namespace CryptoShark
             {
                 rsa.ImportRSAPublicKey(rsaPublicKey, out var _);
                 return rsa.VerifyHash(hash.ToArray(), signature.ToArray(), HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1);
+            }
+            finally
+            {
+                if (rsa != null)
+                    rsa.Dispose();
+            }
+        }
+
+        private ReadOnlySpan<byte> DecrypRsatKey(ReadOnlySpan<byte> rsaPrivateKey, string password)
+        {
+            RSA rsa = null;
+
+            try
+            {
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    rsa = new RSACng();
+                else
+                    rsa = RSA.Create();
+
+                rsa.ImportEncryptedPkcs8PrivateKey(password.ToCharArray(), rsaPrivateKey, out var _);
+
+                return rsa.ExportPkcs8PrivateKey();
             }
             finally
             {
