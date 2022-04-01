@@ -33,18 +33,22 @@ namespace CryptoShark
         /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
         /// <param name="password">OPTIONAL - Password if Private Key is Encrypted</param>        
         /// <returns></returns>
-        public Dto.ECCEncryptionResult Encrypt(ReadOnlySpan<byte> clearData, ReadOnlySpan<byte> eccPublicKey, ReadOnlySpan<byte> eccPrivateKey, 
+        public Dto.ECCEncryptionResult Encrypt(ReadOnlySpan<byte> clearData, ReadOnlySpan<byte> eccPublicKey, ReadOnlySpan<byte> eccPrivateKey,
             EncryptionAlgorithm encryptionAlgorithm, string password = null)
         {
             var engine = new EncryptionEngine(encryptionAlgorithm);
 
+            // Decrypt Key if needed
+            if (!String.IsNullOrEmpty(password))
+                eccPrivateKey = DecrypEcctKey(eccPrivateKey, password);
+
             // Generate Data
             var gcmNonce = GenerateSalt();
-            var key = String.IsNullOrWhiteSpace(password) ? GenerateKey(eccPrivateKey, eccPublicKey) : GenerateKey(DecrypEcctKey(eccPrivateKey, password), eccPublicKey);
+            var key = GenerateKey(eccPrivateKey, eccPublicKey);
             var hash = ComputeHash(clearData);
 
             // Encrypt
-            var encrypted = engine.Encrypt(clearData, key, gcmNonce);
+            var encrypted = engine.Encrypt(clearData, key, gcmNonce).ToArray();
 
             // Build the response
             return new Dto.ECCEncryptionResult
@@ -69,14 +73,18 @@ namespace CryptoShark
         /// <param name="eccSignature">Signature</param>     
         /// <param name="password">OPTIONAL - Password if Private Key is Encrypted</param> 
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData, ReadOnlySpan<byte> eccPublicKey, ReadOnlySpan<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm, 
+        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> encryptedData, ReadOnlySpan<byte> eccPublicKey, ReadOnlySpan<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm,
             ReadOnlySpan<byte> gcmNonce, ReadOnlySpan<byte> eccSignature, string password = null)
         {
             // Create Engine
             var engine = new EncryptionEngine(encryptionAlgorithm);
 
+            // Decrypt Key if needed
+            if (!String.IsNullOrEmpty(password))
+                eccPrivateKey = DecrypEcctKey(eccPrivateKey, password);
+
             // Derive the Key
-            var key = String.IsNullOrWhiteSpace(password) ? GenerateKey(eccPrivateKey, eccPublicKey) : GenerateKey(DecrypEcctKey(eccPrivateKey, password), eccPublicKey); 
+            var key = GenerateKey(eccPrivateKey, eccPublicKey);
 
             // Decrypt
             var clearData = engine.Decrypt(encryptedData, key, gcmNonce);
@@ -101,7 +109,7 @@ namespace CryptoShark
                     dsa = ECDsa.Create();
 
                 dsa.ImportSubjectPublicKeyInfo(eccPublicKey, out var _);
-                
+
                 return dsa.VerifyHash(hash.ToArray(), signature.ToArray(), DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
             }
             finally
@@ -135,7 +143,7 @@ namespace CryptoShark
             {
                 if (dsa != null)
                     dsa.Dispose();
-            }            
+            }
         }
 
         private ReadOnlySpan<byte> GenerateSalt(int size = 16)
@@ -174,7 +182,7 @@ namespace CryptoShark
             }
             finally
             {
-                if (diffieHellman != null) 
+                if (diffieHellman != null)
                     diffieHellman.Dispose();
                 if (diffieHellman2 != null)
                     diffieHellman2.Dispose();
@@ -203,7 +211,7 @@ namespace CryptoShark
                     diffieHellman.Dispose();
             }
 
-        }      
+        }
 
         #endregion
     }
