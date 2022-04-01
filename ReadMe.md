@@ -12,6 +12,9 @@ Data Encryption Package for .NET 6
 * .NET 6 Update
 * Added ECC Encryption 
 
+**Version 2.1.2 - Update April 2022**
+* Added back the ability to work with Pkcs8 Encrypted Keys
+
 ## About
 Code written on macOS Catalina (10.15) updated on Windows 11
 
