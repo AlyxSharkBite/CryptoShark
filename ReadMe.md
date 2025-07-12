@@ -15,6 +15,10 @@ Data Encryption Package for .NET 6
 **Version 2.1.2 - Update April 2022**
 * Added back the ability to work with Pkcs8 Encrypted Keys
 
+**Version 2.3 - Update July 2025**
+* .NET 9 Update
+* Added Unit Tests
+
 ## About
 Code written on macOS Catalina (10.15) updated on Windows 11
 
