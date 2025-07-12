@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using CryptoShark.Enums;
 using Org.BouncyCastle.Crypto;
@@ -8,9 +9,8 @@ using Org.BouncyCastle.Crypto.Parameters;
 
 namespace CryptoShark.Engine
 {
-    class EncryptionEngine
-    {
-        private const int _macSize = 128;        
+    internal class EncryptionEngine
+    {               
         private readonly EncryptionAlgorithm _encryptionAlgorithm;
 
         public EncryptionEngine(EncryptionAlgorithm encryptionAlgorithm)
@@ -30,14 +30,16 @@ namespace CryptoShark.Engine
             // Create the Encryption Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
 
+            // Create the Cipher from the Engine
+            var cipher = new GcmBlockCipher(engine);
+
             // Create the Paramters used to emcrypt
             var cipherParameters = new AeadParameters(
                 new KeyParameter(key.ToArray()),
-                _macSize,
+                8 * cipher.GetBlockSize(),
                 nonce.ToArray());
 
-            // Create the Cipher from the Engine
-            var cipher = new GcmBlockCipher(engine);
+           // Init the Cipher          
             cipher.Init(true, cipherParameters);
 
             // Allocate the Buffer for the Encrypted Data
@@ -68,14 +70,16 @@ namespace CryptoShark.Engine
             // Create the Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
 
+            // Create the Cipher from the Engine
+            var cipher = new GcmBlockCipher(engine);
+
             // Create the Cipher Parameters 
             var cipherParameters = new AeadParameters(
                 new KeyParameter(key.ToArray()),
-                _macSize,
+                8 * cipher.GetBlockSize(),
                 nonce.ToArray());
 
-            // Create the block cipher
-            var cipher = new GcmBlockCipher(engine);
+            // Init the Cipher               
             cipher.Init(false, cipherParameters);
 
             // Allocate the buffer for the decrypted data

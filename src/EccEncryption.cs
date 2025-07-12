@@ -28,8 +28,8 @@ namespace CryptoShark
         ///     With specified encryption algorithm
         /// </summary>
         /// <param name="clearData">Data to encrypt</param>
-        /// <param name="eccPublicKey">RSA Key to Encrypt WITH</param>
-        /// <param name="eccPrivateKey">RSA Key to Sign WITH</param>
+        /// <param name="eccPublicKey">ECC Key to Encrypt WITH</param>
+        /// <param name="eccPrivateKey">ECC Key to Sign WITH</param>
         /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
         /// <param name="password">OPTIONAL - Password if Private Key is Encrypted</param>        
         /// <returns></returns>
@@ -51,14 +51,12 @@ namespace CryptoShark
             var encrypted = engine.Encrypt(clearData, key, gcmNonce).ToArray();
 
             // Build the response
-            return new Dto.ECCEncryptionResult
-            {
-                EncryptedData = encrypted.ToArray(),
-                GcmNonce = gcmNonce.ToArray(),
-                Algorithm = encryptionAlgorithm,
-                ECCPublicKey = ECCUtilities.GetEccPublicKey(eccPrivateKey).ToArray(),
-                ECCSignature = SignHash(hash, eccPrivateKey).ToArray()
-            };
+            return new Dto.ECCEncryptionResult(
+                encryptedData: encrypted, 
+                gcmNonce: gcmNonce.ToArray(), 
+                eccPublicKey: eccPublicKey.ToArray(), 
+                eccSignature: SignHash(hash, eccPrivateKey).ToArray(), 
+                algorithm: encryptionAlgorithm);
         }
 
 
