@@ -15,12 +15,18 @@ Data Encryption Package for .NET 6
 **Version 2.1.2 - Update April 2022**
 * Added back the ability to work with Pkcs8 Encrypted Keys
 
+**Version 3.0.0 - Update July 2025**
+* .NET 9 Update
+* Complete rewrite for easier use.
+* Supports logging via ILogger interface
+* Supports multiple forms of dependency injection
+
 ## About
-Code written on macOS Catalina (10.15) updated on Windows 11
+Code written on macOS & Windows 11
 
 The concept is to have a simple and powerful took for Data Encryption with cross platform support (Windows, macOS, Linux).  
 
-[BouncyCastle](https://www.bouncycastle.org) is the core of the Encryption and Decryption removing any concerns of export restrictions. 
+[BouncyCastle](https://www.bouncycastle.org) is the core of the Encryption and Decryption. 
 
 Encryption is done with a 256 Bit Key using Galois/Counter Mode (GCM).  The following encryption algorithms are supported:
 
@@ -30,85 +36,132 @@ Encryption is done with a 256 Bit Key using Galois/Counter Mode (GCM).  The foll
 * [RC6](https://en.wikipedia.org/wiki/RC6)
 * [Serpent](https://en.wikipedia.org/wiki/Serpent_(cipher))
 * [TwoFish](https://en.wikipedia.org/wiki/Twofish)
-             
-## Usage
-`string password = "Abc123";
-byte[] data = new byte[4096];`
+           
+## Using Concepts
+Designed to fit your workflow, all public classes have interfaces for easy dependency injection
 
-### Password Based Encryption
+* Factory for Creation
+* Static Create Methods
+* Traditional Constructiors
 
-            // Encrypt
-            CryptoShark.PBEncryption encryption = new CryptoShark.PBEncryption();
+## Interfaces:
 
-            var encrypted = encryption.Encrypt(data, password, CrytoShark.EncryptionAlgorithm.TwoFish);
+### ICryptoSharkCryptographyUtilities (Implimented by CryptoSharkCryptographyUtilities)
+- Utility class for hashing, key creation & SecureString creation.
 
-            // Decrypt
-            var decrypted = encryption.Decrypt(encrypted.EncryptedData,
-                            password,
-                            encrypted.Algorithm,
-                            encrypted.GcmNonce,
-                            encrypted.PbkdfSalt,
-                            encrypted.Sha384Hmac,
-                            encrypted.Itterations);
+### Methods
+- `ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);`
+    - Will compute the hash of the given data. 
+    - See `HashAlgorithm.cs` for list of supported Hash Algorithms
+- `string HashBytes(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);`
+    - Will compute the hash of the given data.
+    - See `HashAlgorithm.cs` for list of supported Hash Algorithms
+    - See `StringEncoding.cs` for list of supported Text Encodings
+- `ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);`
+    - Creates an Asymetric Private Key in Pkcs8 Encrypted DER format
+    - For Ecc Keys pass `EccKeyParameters` to method
+    - For Rsa Keys pass `RsaKeyParameters` to method
+- `ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, CryptographyType cryptographyType);`
+    - Gets the Asymetric Public Key from an Asymetric Private Key 
+    - For Ecc Keys use `CryptographyType.EllipticalCurveCryptography`
+    - For Ecc Keys use `CryptographyType.RivestShamirAdlemanCryptography`
+- `SecureString StringToSecureString(string value);`
+    - Creates a [SecureString](https://learn.microsoft.com/en-us/dotnet/api/system.security.securestring?view=net-9.0) from a string   
 
+### Creation 
+- Static Create Method
+    - `ICryptoSharkCryptographyUtilities cryptographyUtilities = CryptoSharkCryptographyUtilities.Create(ilogger);`
+- Factory Method
+    - `ICryptoSharkCryptographyUtilities cryptographyUtilities = CryptoSharkFactory.CreateCryptographyUtilities(ilogger);`
+- Public Constructor
+    - `ICryptoSharkCryptographyUtilities cryptographyUtilities = new CryptoSharkCryptographyUtilities(ilogger)`
 
-### RSA Encryption
-*This is the most simplistic example the RSAUtilites can also encrypt the RSA Private keys as well as other functions.  See documentation.*
+### ICryptoSharkSymmetricCryptography (Implimented by CryptoSharkPasswordCryptography)
+- Symetric (Password based encryption) Encryption/Decryption
 
+### Methods
+- `ReadOnlyMemory<byte> Encrypt(IEncryptionRequest encryptionRequest);`
+    - Encrypts data with password
+    - Pass `SemetricEncryptionRequest` to method
+- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, SecureString password);`
+    - Decrypts previously encrypted data
 
-            // Create the RSA Encryption Object
-            CryptoShark.RsaEncryption encryption = new CryptoShark.RsaEncryption();
+### Creation 
+- Static Create Method
+    - `ICryptoSharkSymmetricCryptography symmetricCryptography = CryptoSharkPasswordCryptography.Create(ilogger);`
+- Factory Method
+    - `ICryptoSharkSymmetricCryptography symmetricCryptography = CryptoSharkFactory.CreateSymmetricCryptography(ilogger);`
+- Public Constructor
+    - `ICryptoSharkSymmetricCryptography symmetricCryptography = new CryptoSharkPasswordCryptography(ilogger)`
 
-            // Create a Couple RSA Keys
-            var key1 = encryption.RSAUtilities.CreateRsaKey(2048);
-            var key2 = encryption.RSAUtilities.CreateRsaKey(2048);
+### ICryptoSharkCryptographyUtilities ECC Implimentation (Implimented by CryptoSharkEccCryptography)
+- Asyemetric (Public/Private) ECC Encryption
 
-            // Get the Public Keys
-            var key1Pub = encryption.RSAUtilities.GetRsaPublicKey(key1);
-            var key2Pub = encryption.RSAUtilities.GetRsaPublicKey(key2);
+### Methods
+- `ReadOnlyMemory<byte> Encrypt(IAsymetricEncryptionRequest encryptionRequest);`
+    - Encrypts data with ECC Public/Private Keys
+    - Pass `AsymetricEncryptionRequest` to method
+- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);`
+    - Decrypts previously encrypted data
 
-            // Encrypt
-            var encrypted = encryption.Encrypt(data, key1Pub, key2, CrytoShark.EncryptionAlgorithm.TwoFish);
+### Creation 
+- Static Create Method
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = CryptoSharkEccCryptography.Create(ilogger);`
+- Factory Method
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = CryptoSharkFactory.CreateAsymmetricCryptography(ilogger, CryptographyType.EllipticalCurveCryptography);`
+- Public Constructor
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = new CryptoSharkEccCryptography(ilogger)`
 
-            // Decrypt
-            var decrypted = encryption.Decrypt(encrypted.EncryptedData,
-                key2Pub,
-                key1,
-                encrypted.Algorithm,
-                encrypted.GcmNonce,
-                encrypted.RSASignature,
-                encrypted.EncryptionKey);
+### ICryptoSharkCryptographyUtilities RSA Implimentation (Implimented by CryptoSharkRsaCryptography)
+- Asyemetric (Public/Private) RSA Encryption
 
+### Methods
+- `ReadOnlyMemory<byte> Encrypt(IAsymetricEncryptionRequest encryptionRequest);`
+    - Encrypts data with RSA Public/Private Keys
+    - Pass `AsymetricEncryptionRequest` to method
+- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);`
+    - Decrypts previously encrypted data
 
-### ECC Encryption
-*This is the most simplistic example the ECCUtilites can also encrypt the ECC Private keys as well as other functions.  See documentation.*
+### Creation 
+- Static Create Method
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = CryptoSharkRsaCryptography.Create(ilogger);`
+- Factory Method
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = CryptoSharkFactory.CreateAsymmetricCryptography(ilogger, CryptographyType.RivestShamirAdlemanCryptography);`
+- Public Constructor
+    - `ICryptoSharkAsymmetricCryptography asymmetricCryptography = new CryptoSharkRsaCryptography(ilogger)`
+    
+## Support Classes:
 
+### EccKeyParameters
+- Used to create ECC Private Key
 
-            // Create the ECC Encryption Object
-            CryptoShark.EccEncryption encryption = new CryptoShark.EccEncryption();
+### Creation 
+- `IAsymmetricKeyParameter parameter = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);`
 
-            // Create a Couple ECC Keys
-            var key1 = encryption.EccUtilities.CreateEccKey(ECCurve.NamedCurves.nistP256);
-            var key2 = encryption.EccUtilities.CreateEccKey(ECCurve.NamedCurves.nistP256);
+### RsaKeyParameters
+- Used to create RSA Private Key
 
-            // Get the Public Keys
-            var key1Pub = encryption.ECCUtilities.GetEccPublicKey(key1);
-            var key2Pub = encryption.ECCUtilities.GetEccPublicKey(key2);
+### Creation 
+- `IAsymmetricKeyParameter parameter = new RsaKeyParameters(password, RsaKeySize.KeySize2048);`
 
-            // Encrypt
-            var encrypted = encryption.Encrypt(data, key1Pub, key2, CrytoShark.EncryptionAlgorithm.TwoFish);
+### AsymetricEncryptionRequest
+- Request to Encrypt with Public/Private Key
 
-            // Decrypt
-            var decrypted = encryption.Decrypt(encrypted.EncryptedData,
-                key2Pub,
-                key1,
-                encrypted.Algorithm,
-                encrypted.GcmNonce,
-                encrypted.ECCSignature);
+### Creation 
+    - `IAsymetricEncryptionRequest request = AsymetricEncryptionRequest.CreateRequest(
+                publicKey: publicKey,                                   // Public Key to use      
+                privateKey: privateKey,                                 // Private Key to use
+                clearData: dataToEncrypt,                               // Data to encrypt
+                password: password,                                     // Private Key Password
+                algorithm: CryptoShark.Enums.EncryptionAlgorithm.Aes    // Encryption Algorithm to use
+            );`
 
-### Hashing
-*CryptoShark has a Hashing engine supporting most common Hash Algorithms*
-The CryptoShark.HashUtilites has two static methods for hashing data.
-One returns a string in the specified encoding (Hex, Base64 or Bas64Url)
-The other a ReadOnlySpan<byte>                 
-                
+### SemetricEncryptionRequest
+- Request to Encrypt with Password
+
+### Creation 
+    - `IEncryptionRequest request = SemetricEncryptionRequest.CreateRequest(                
+                clearData: dataToEncrypt,                               // Data to encrypt
+                password: password,                                     // Password to use
+                algorithm: CryptoShark.Enums.EncryptionAlgorithm.Aes    // Encryption Algorithm to use
+            );`

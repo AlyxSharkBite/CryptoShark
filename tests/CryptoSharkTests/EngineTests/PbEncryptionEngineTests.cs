@@ -1,45 +1,71 @@
 ﻿using CryptoShark;
 using CryptoShark.Enums;
+using CryptoShark.Utilities;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CryptoSharkTests.EngineTests
 {
-    internal class PbEncryptionEngineTests
-    {        
-        private const string PBE_PW = "Abc123";
-        private byte[] _sampleData;        
+    public class PbEncryptionEngineTests
+    {
+        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
+
+        private byte[] _sampleData;
+        private CryptoSharkUtilities _cryptoSharkUtilities;
+        private Mock<ILogger> _mockLogger;
+        private SecureString _password;
 
         [SetUp]
         public void Setup()
         {
-            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");            
+            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);
+            _cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");
+            _password = StringToSecureString("Abc123");
         }
 
-        [TestCaseSource("GetSerializationMethods")]
-        public void PBEncryptionTest(EncryptionAlgorithm encryptionAlgorithm)
+        [TearDown]
+        public void Teardown()
         {
-            PBEncryption pbEncryption = new PBEncryption();
-
-            var encrypted = pbEncryption.Encrypt(_sampleData, PBE_PW, encryptionAlgorithm);
-            Assert.That(encrypted.EncryptedData, Is.Not.EqualTo(null));
-            Assert.That(encrypted.Sha384Hmac, Is.Not.EqualTo(null));
-            Assert.That(encrypted.GcmNonce, Is.Not.EqualTo(null));
-            Assert.That(encrypted.PbkdfSalt, Is.Not.EqualTo(null));
-            Assert.That(encrypted.Iterations, Is.GreaterThan(1));
-
-            var decrypted = pbEncryption.Decrypt(encrypted.EncryptedData, PBE_PW, encrypted.Algorithm,
-                encrypted.GcmNonce, encrypted.PbkdfSalt, encrypted.Sha384Hmac, encrypted.Iterations);
-
-            Assert.That(decrypted.SequenceEqual(_sampleData), Is.True);
+            _password.Dispose();
         }
 
-        private static Array GetSerializationMethods()
+        [TestCaseSource(nameof(GetEncryptionAlgorithms))]
+        public void PbEncryptionTest(EncryptionAlgorithm encryptionAlgorithm)
+        {
+            PBEncryption rsaEncryption = new PBEncryption(_mockLogger.Object);           
+
+            var encrypted = rsaEncryption.Encrypt(_sampleData, encryptionAlgorithm, _password);
+            Assert.That(encrypted.IsSuccess, Is.True);
+            Assert.That(encrypted.Value, Is.Not.Null);
+            Assert.That(encrypted.Value.Algorithm, Is.EqualTo(encryptionAlgorithm));
+            Assert.That(encrypted.Value.Nonce, Is.Not.Null);
+            Assert.That(encrypted.Value.Hash, Is.Not.Null);
+            Assert.That(encrypted.Value.Salt, Is.Not.Null);
+            Assert.That(encrypted.Value.EncryptedData, Is.Not.Null);
+            Assert.That(encrypted.Value.Iterations, Is.GreaterThan(0));
+
+            var decrypted = rsaEncryption.Decrypt(encrypted.Value.EncryptedData, _password, encryptionAlgorithm,
+                encrypted.Value.Nonce, encrypted.Value.Salt, encrypted.Value.Hash, encrypted.Value.Iterations);
+
+            Assert.That(encrypted.IsSuccess, Is.True);
+            Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);
+        }
+
+        private static Array GetEncryptionAlgorithms()
         {
             return Enum.GetValues(typeof(CryptoShark.Enums.EncryptionAlgorithm));
+        }
+
+        private static SecureString StringToSecureString(string s)
+        {
+            return _secureStringUtilities.StringToSecureString(s);
         }
     }
 }

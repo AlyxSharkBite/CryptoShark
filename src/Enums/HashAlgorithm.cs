@@ -5,7 +5,7 @@ namespace CryptoShark.Enums
     /// <summary>
     ///     Hashing Algorithms
     /// </summary>
-    public enum HashAlgorithm
+    public enum HashAlgorithm : byte
     {
         /// <summary>
         ///     MD5 128 Bit

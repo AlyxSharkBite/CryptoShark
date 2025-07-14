@@ -7,8 +7,8 @@
     <SignAssembly>False</SignAssembly>
     <PackageLicenseFile>C:\Users\AlyxS\source\repos\CryptoShark\LICENSE</PackageLicenseFile>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>2.3.0</AssemblyVersion>
-    <FileVersion>2.3.0</FileVersion>
+    <AssemblyVersion>3.0.0</AssemblyVersion>
+    <FileVersion>3.0.0</FileVersion>
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/AlyxSharkBite/CryptoShark</PackageProjectUrl>
     <Copyright>2025</Copyright>
@@ -17,9 +17,10 @@
     <RepositoryUrl>https://github.com/AlyxSharkBite/CryptoShark</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <LangVersion>default</LangVersion>
-    <Version>2.3.0</Version>
+    <Version>3.0.0</Version>
     <PackageLicenseUrl>https://mit-license.org</PackageLicenseUrl>
     <Title>CryptoShark</Title>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -33,6 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="3.6.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.3" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="System.Formats.Asn1" Version="9.0.7" />
@@ -40,7 +43,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Dto\" />
     <Folder Include="Engine\" />
   </ItemGroup>
   <ItemGroup>
