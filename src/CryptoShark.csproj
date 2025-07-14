@@ -1,11 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <CodePage>65001</CodePage>
     <Nullable>disable</Nullable>
     <SignAssembly>False</SignAssembly>
-    <PackageLicenseFile>C:\Users\AlyxS\source\repos\CryptoShark\LICENSE</PackageLicenseFile>
     <NeutralLanguage>en</NeutralLanguage>
     <AssemblyVersion>3.0.0</AssemblyVersion>
     <FileVersion>3.0.0</FileVersion>
@@ -17,10 +16,11 @@
     <RepositoryUrl>https://github.com/AlyxSharkBite/CryptoShark</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <LangVersion>default</LangVersion>
-    <Version>3.0.0</Version>
-    <PackageLicenseUrl>https://mit-license.org</PackageLicenseUrl>
+    <Version>3.0.0</Version>    
     <Title>CryptoShark</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -44,6 +44,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Engine\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ReadMe.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Update="ReadMe.md">
