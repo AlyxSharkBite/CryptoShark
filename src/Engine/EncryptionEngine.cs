@@ -9,7 +9,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 
 namespace CryptoShark.Engine
 {
-    internal class EncryptionEngine
+    internal sealed class EncryptionEngine
     {               
         private readonly EncryptionAlgorithm _encryptionAlgorithm;
 
@@ -25,7 +25,7 @@ namespace CryptoShark.Engine
         /// <param name="key">Encryotion Key</param>
         /// <param name="nonce">Nonce Token</param>
         /// <returns></returns>
-        public ReadOnlySpan<byte> Encrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+        public byte[] Encrypt(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
         {
             // Create the Encryption Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
@@ -65,7 +65,7 @@ namespace CryptoShark.Engine
         /// <param name="key">Encryption Key</param>
         /// <param name="nonce">Nonce Token</param>
         /// <returns></returns>
-        public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+        public byte[] Decrypt(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
         {
             // Create the Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);

@@ -1,9 +1,13 @@
 ﻿using CryptoShark;
 using CryptoShark.Engine;
 using CryptoShark.Enums;
+using CryptoShark.Utilities;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,40 +16,60 @@ namespace CryptoSharkTests.EngineTests
 {
     internal class EccEncryptionEngineTests
     {
-        private const string ECC_PRIVATE_KEY = "MIHOAgEAMBAGByqGSM49AgEGBSuBBAAiBIGnMIGkAgEBBDCq/HeGtUABO0VumKoySesZSCTEyDDE1x89lqNIoA/jgL/WGF+Pf+zZpNOJTDRz0R6gBwYFK4EEACKhZANiAAQRZEwUyyoSg5eEs4RFAA7yiKlW84MtM9HqXiJatEnnhd50TBd9Sddk8DXZoVjazS5+WBlr42WNFOAe4EYxbRFkaudaHWKJyC5sndRx65CwCd4zitiiVRRzGpAhe60/IiagDTALBgNVHQ8xBAMCAIg=";
-          
-        private byte[] _sampleData;        
-        private byte[] _eccPrivateKey;
-        private byte[] _eccPublicKey;        
+        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
+
+        private byte[] _sampleData;                  
+        private CryptoSharkUtilities _cryptoSharkUtilities;
+        private Mock<ILogger> _mockLogger;
+        private SecureString _password;
 
         [SetUp]
         public void Setup()
         {
-            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");           
-            _eccPrivateKey = Convert.FromBase64String(ECC_PRIVATE_KEY);
-            _eccPublicKey = EccEncryption.ECCUtilities.GetEccPublicKey(_eccPrivateKey).ToArray();            
+            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);
+            _cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");   
+            _password = StringToSecureString("Abc123");
         }
 
-        [TestCaseSource("GetSerializationMethods")]
+        [TearDown]
+        public void Teardown() 
+        { 
+            _password.Dispose();
+        }
+
+
+        [TestCaseSource(nameof(GetEncryptionAlgorithms))]
         public void EccEncryptionTest(EncryptionAlgorithm encryptionAlgorithm)
         {
-            EccEncryption eccEncryption = new EccEncryption();
+            EccEncryption eccEncryption = new EccEncryption(_mockLogger.Object);
+            var eccPrivateKey = _cryptoSharkUtilities.CreateEccKey(ECCurve.NamedCurves.nistP384, _password).Value;
+            var eccPublicKey = _cryptoSharkUtilities.GetEccPublicKey(eccPrivateKey, _password).Value;
 
-            var encrypted = eccEncryption.Encrypt(_sampleData, _eccPublicKey, _eccPrivateKey, encryptionAlgorithm);
-            Assert.That(encrypted, Is.Not.EqualTo(null));
-            Assert.That(encrypted.EncryptedData, Is.Not.EqualTo(null));
-            Assert.That(encrypted.ECCSignature, Is.Not.EqualTo(null));
-            Assert.That(encrypted.GcmNonce, Is.Not.EqualTo(null));
+            var encrypted = eccEncryption.Encrypt(_sampleData, eccPublicKey, eccPrivateKey, encryptionAlgorithm, _password);
+            Assert.That(encrypted.IsSuccess, Is.True);
+            Assert.That(encrypted.Value, Is.Not.Null);
+            Assert.That(encrypted.Value.Algorithm, Is.EqualTo(encryptionAlgorithm));
+            Assert.That(encrypted.Value.Nonce, Is.Not.Null);
+            Assert.That(encrypted.Value.PublicKey, Is.Not.Null);
+            Assert.That(encrypted.Value.EncryptedData, Is.Not.Null);
+            Assert.That(encrypted.Value.Signature, Is.Not.Null);
 
-            var decrypted = eccEncryption.Decrypt(encrypted.EncryptedData, _eccPublicKey, _eccPrivateKey, 
-                encryptionAlgorithm, encrypted.GcmNonce, encrypted.ECCSignature);
-            
-            Assert.That(decrypted.SequenceEqual(_sampleData), Is.True);
+            var decrypted = eccEncryption.Decrypt(encrypted.Value.EncryptedData, eccPublicKey, eccPrivateKey, 
+                encryptionAlgorithm, encrypted.Value.Nonce, encrypted.Value.Signature, _password);
+
+            Assert.That(encrypted.IsSuccess, Is.True);
+            Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);
         }
 
-        private static Array GetSerializationMethods()
+        private static Array GetEncryptionAlgorithms()
         {
             return Enum.GetValues(typeof(CryptoShark.Enums.EncryptionAlgorithm));
+        }
+
+        private static SecureString StringToSecureString(string s)
+        {
+            return _secureStringUtilities.StringToSecureString(s);
         }
     }
 }

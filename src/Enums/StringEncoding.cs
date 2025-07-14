@@ -5,7 +5,7 @@ namespace CryptoShark.Enums
     /// <summary>
     ///     String Encoding Options
     /// </summary>
-    public enum StringEncoding
+    public enum StringEncoding : byte
     {
         /// <summary>
         ///     Hexadecimal format
