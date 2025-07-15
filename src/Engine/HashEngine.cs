@@ -1,4 +1,5 @@
 ﻿using CryptoShark.Enums;
+using Org.BouncyCastle.Security;
 using System;
 
 
@@ -10,7 +11,9 @@ namespace CryptoShark.Engine
 
         public HashEngine(HashAlgorithm hashAlgorithm)
         {
-            _hashAlgorithm = hashAlgorithm;
+            _hashAlgorithm = hashAlgorithm == HashAlgorithm.NONE ?
+                HashAlgorithm.SHA_256 : 
+                hashAlgorithm;
         }        
 
         /// <summary>
@@ -105,67 +108,7 @@ namespace CryptoShark.Engine
 
         private Org.BouncyCastle.Crypto.IDigest GetDigest()
         {
-            dynamic digest;
-
-            switch (_hashAlgorithm)
-            {
-                case HashAlgorithm.MD5:
-                    digest = new Org.BouncyCastle.Crypto.Digests.MD5Digest();
-                    break;
-
-                case HashAlgorithm.SHA1:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha1Digest();
-                    break;
-
-                case HashAlgorithm.SHA2_256:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha256Digest();
-                    break;
-
-                case HashAlgorithm.SHA2_384:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha384Digest();
-                    break;
-
-                case HashAlgorithm.SHA2_512:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha512Digest();
-                    break;
-
-                case HashAlgorithm.SHA3_256:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(256);
-                    break;
-
-                case HashAlgorithm.SHA3_384:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(384);
-                    break;
-
-                case HashAlgorithm.SHA3_512:
-                    digest = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(512);
-                    break;
-
-                case HashAlgorithm.RipeMD_128:
-                    digest = new Org.BouncyCastle.Crypto.Digests.RipeMD128Digest();
-                    break;
-
-                case HashAlgorithm.RipeMD_160:
-                    digest = new Org.BouncyCastle.Crypto.Digests.RipeMD160Digest();
-                    break;
-
-                case HashAlgorithm.RipeMD_256:
-                    digest = new Org.BouncyCastle.Crypto.Digests.RipeMD256Digest();
-                    break;
-
-                case HashAlgorithm.RipeMD_320:
-                    digest = new Org.BouncyCastle.Crypto.Digests.RipeMD320Digest();
-                    break;
-
-                case HashAlgorithm.Whirlpool:
-                    digest = new Org.BouncyCastle.Crypto.Digests.WhirlpoolDigest();
-                    break;
-
-                default:
-                    throw new ArgumentException("Invalid Hash Algorithm");
-            }
-
-            return digest;
+            return DigestUtilities.GetDigest(_hashAlgorithm.ToString());
         }       
 
         private string Base64UrlEncode(ReadOnlySpan<byte> data)

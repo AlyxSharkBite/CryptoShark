@@ -44,7 +44,7 @@ namespace CryptoShark.CryptographicProviders
             }
             
             var decryptionResult = _encryptor.Decrypt(record.EncryptedData, record.PublicKey, privateKey, 
-                record.Algorithm, record.Nonce, record.Signature, password);
+                record.EncryptionAlgorithm, record.HashAlgorithm, record.Nonce, record.Signature, password);
 
             if (decryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", decryptionResult.Error);
@@ -66,7 +66,8 @@ namespace CryptoShark.CryptographicProviders
                 throw new ArgumentNullException(nameof(encryptionRequest));
 
             var encryptionResult = _encryptor.Encrypt(encryptionRequest.ClearData, encryptionRequest.PublicKey,
-                encryptionRequest.PrivateKey, encryptionRequest.Algorithm, encryptionRequest.Password);
+                encryptionRequest.PrivateKey, encryptionRequest.EncryptionAlgorithm, encryptionRequest.HashAlgorithm,
+                encryptionRequest.Password);
 
             if (encryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", encryptionResult.Error);

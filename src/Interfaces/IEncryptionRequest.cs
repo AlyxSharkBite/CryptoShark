@@ -23,7 +23,12 @@ namespace CryptoShark.Interfaces
         /// <summary>
         ///     Encryption Algorithm To Use
         /// </summary>
-        EncryptionAlgorithm Algorithm { get; }
+        EncryptionAlgorithm EncryptionAlgorithm { get; }
+
+        /// <summary>
+        ///     Hash Algorithm To Use
+        /// </summary>
+        HashAlgorithm HashAlgorithm { get; }        
     }
 
     public interface IAsymetricEncryptionRequest : IEncryptionRequest
@@ -38,5 +43,11 @@ namespace CryptoShark.Interfaces
         /// Private Key
         /// </summary>
         byte[] PrivateKey { get; }
+
+        /// <summary>
+        /// Padding (RSA Only) 
+        /// Default: OAEPWithSHA-256AndMGF1Padding
+        /// </summary>
+        string RsaPadding { get; }
     }
 }

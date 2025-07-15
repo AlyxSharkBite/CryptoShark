@@ -37,7 +37,7 @@ namespace CryptoSharkTests.UtilityTests
             Assert.That(newRecord.Signature.SequenceEqual(record.Signature), Is.True);
             Assert.That(newRecord.EncryptedData.SequenceEqual(record.EncryptedData), Is.True);
             Assert.That(newRecord.Nonce.SequenceEqual(record.Nonce), Is.True);
-            Assert.That(newRecord.Algorithm == record.Algorithm, Is.True);
+            Assert.That(newRecord.EncryptionAlgorithm == record.EncryptionAlgorithm, Is.True);
 
         }
 
@@ -57,7 +57,7 @@ namespace CryptoSharkTests.UtilityTests
             Assert.That(newRecord.Salt.SequenceEqual(record.Salt), Is.True);
             Assert.That(newRecord.EncryptedData.SequenceEqual(record.EncryptedData), Is.True);
             Assert.That(newRecord.Nonce.SequenceEqual(record.Nonce), Is.True);
-            Assert.That(newRecord.Algorithm == record.Algorithm, Is.True);
+            Assert.That(newRecord.EncryptionAlgorithm == record.EncryptionAlgorithm, Is.True);
             Assert.That(newRecord.Iterations == record.Iterations, Is.True);
 
         }
@@ -79,14 +79,14 @@ namespace CryptoSharkTests.UtilityTests
             Assert.That(newRecord.Signature.SequenceEqual(record.Signature), Is.True);
             Assert.That(newRecord.EncryptedData.SequenceEqual(record.EncryptedData), Is.True);
             Assert.That(newRecord.Nonce.SequenceEqual(record.Nonce), Is.True);
-            Assert.That(newRecord.Algorithm == record.Algorithm, Is.True);
+            Assert.That(newRecord.EncryptionAlgorithm == record.EncryptionAlgorithm, Is.True);
         }
 
         private static EccCryptographyRecord CreateEccCryptographyRecord()
         {
             return new EccCryptographyRecord
             {
-                Algorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
+                EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
                 PublicKey = GenerateBytes(256),
                 Signature = GenerateBytes(128),
                 EncryptedData = GenerateBytes(4096),
@@ -98,7 +98,7 @@ namespace CryptoSharkTests.UtilityTests
         {
             return new PbeCryptographyRecord
             {
-                Algorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
+                EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
                 EncryptedData = GenerateBytes(4096),
                 Nonce = GenerateBytes(16),
                 Hash = GenerateBytes(96),
@@ -111,7 +111,7 @@ namespace CryptoSharkTests.UtilityTests
         {
             return new RsaCryptographyRecord
             {
-                Algorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
+                EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
                 EncryptedData = GenerateBytes(4096),
                 EncryptionKey = GenerateBytes(112),
                 PublicKey = GenerateBytes(248),

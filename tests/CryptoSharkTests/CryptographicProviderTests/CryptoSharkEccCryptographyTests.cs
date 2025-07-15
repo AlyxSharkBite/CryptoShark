@@ -53,7 +53,7 @@ public class CryptoSharkEccCryptographyTests
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData, 
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -96,7 +96,7 @@ public class CryptoSharkEccCryptographyTests
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         Assert.Throws<CryptographicException>(() => provider.Encrypt(request));
 
@@ -115,7 +115,7 @@ public class CryptoSharkEccCryptographyTests
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
        
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -137,7 +137,7 @@ public class CryptoSharkEccCryptographyTests
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -162,7 +162,7 @@ public class CryptoSharkEccCryptographyTests
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);

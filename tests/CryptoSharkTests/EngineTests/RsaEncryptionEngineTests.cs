@@ -43,10 +43,12 @@ namespace CryptoSharkTests.EngineTests
             var rsaPrivateKey = _cryptoSharkUtilities.CreateRsaKey(RsaKeySize.KeySize1024, _password).Value;
             var rsaPublicKey = _cryptoSharkUtilities.GetRsaPublicKey(rsaPrivateKey, _password).Value;
 
-            var encrypted = rsaEncryption.Encrypt(_sampleData, rsaPublicKey, rsaPrivateKey, encryptionAlgorithm, _password);
+            var encrypted = rsaEncryption.Encrypt(_sampleData, rsaPublicKey, rsaPrivateKey, encryptionAlgorithm, HashAlgorithm.SHA3_256,
+                _password, null);
+
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(encrypted.Value, Is.Not.Null);
-            Assert.That(encrypted.Value.Algorithm, Is.EqualTo(encryptionAlgorithm));
+            Assert.That(encrypted.Value.EncryptionAlgorithm, Is.EqualTo(encryptionAlgorithm));
             Assert.That(encrypted.Value.Nonce, Is.Not.Null);
             Assert.That(encrypted.Value.EncryptionKey, Is.Not.Null);
             Assert.That(encrypted.Value.EncryptedData, Is.Not.Null);
@@ -54,7 +56,8 @@ namespace CryptoSharkTests.EngineTests
             Assert.That(encrypted.Value.PublicKey, Is.Not.Null);
 
             var decrypted = rsaEncryption.Decrypt(encrypted.Value.EncryptedData, rsaPublicKey, rsaPrivateKey, encryptionAlgorithm,
-                encrypted.Value.Nonce, encrypted.Value.Signature, encrypted.Value.EncryptionKey, _password);
+                encrypted.Value.HashAlgorithm, encrypted.Value.Nonce, encrypted.Value.Signature, encrypted.Value.EncryptionKey,
+                _password, null);
 
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);

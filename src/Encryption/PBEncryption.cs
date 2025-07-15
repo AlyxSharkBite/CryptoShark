@@ -6,6 +6,7 @@ using CryptoShark.Utilities;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Security;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -25,8 +26,7 @@ namespace CryptoShark
         private readonly ILogger _logger;
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
-        private readonly Random _random;
-
+        private readonly SecureRandom _secureRandom;
 
         /// <summary>
         /// Constructor
@@ -37,7 +37,7 @@ namespace CryptoShark
             _logger = logger;
             _secureStringUtilities = new SecureStringUtilities();
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
-            _random = new Random();
+            _secureRandom = new SecureRandom();
         }
 
         /// <summary>
@@ -45,18 +45,19 @@ namespace CryptoShark
         /// </summary>
         /// <param name="clearData">Data to Encrypt</param>
         /// <param name="encryptionAlgorithm">Encryption Algorithm to use</param> 
+        /// <param name="hashAlgorithm">Hashing Algorithm to use</param> 
         /// <param name="password">Password for encryption</param>        
         /// <returns>Encryption Results</returns>
         public Result<PbeCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, EncryptionAlgorithm encryptionAlgorithm,
-            SecureString password)
+            CryptoShark.Enums.HashAlgorithm hashAlgorithm, SecureString password)
         {
             try
             {
                 var engine = new EncryptionEngine(encryptionAlgorithm);
 
                 // Create our paramaters 
-                var itterations = _random.Next(100000, 500000);
-
+                var itterations = _secureRandom.Next(10000, 500000);
+                
                 var nonceResult = GenerateSalt();
                 if (nonceResult.IsFailure)
                     return Result.Failure<PbeCryptographyRecord, Exception>(nonceResult.Error);
@@ -69,7 +70,7 @@ namespace CryptoShark
                 if (keyResult.IsFailure)
                     return Result.Failure<PbeCryptographyRecord, Exception>(keyResult.Error);
 
-                var hashResult = _cryptoSharkUtilities.Hmac(clearData, keyResult.Value, Enums.HashAlgorithm.SHA2_384);
+                var hashResult = _cryptoSharkUtilities.Hmac(clearData, keyResult.Value, hashAlgorithm);
                 if (hashResult.IsFailure)
                     return Result.Failure<PbeCryptographyRecord, Exception>(hashResult.Error);
 
@@ -78,12 +79,13 @@ namespace CryptoShark
 
                 return new PbeCryptographyRecord
                 {
-                    Algorithm = encryptionAlgorithm,
+                    EncryptionAlgorithm = encryptionAlgorithm,
                     EncryptedData = encrypted,
                     Hash = hashResult.Value,
                     Iterations = itterations,
                     Nonce = nonceResult.Value,
-                    Salt = saltResult.Value
+                    Salt = saltResult.Value,
+                    HashAlgorithm = hashAlgorithm
                 };
             }
             catch (Exception ex)
@@ -98,19 +100,20 @@ namespace CryptoShark
         /// </summary>
         /// <param name="encryptedData">Encrypted Data</param>
         /// <param name="password">Password for decryption</param>
-        /// <param name="algorithm">Encryption Algorithm</param>
+        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
+        /// <param name="hashAlgorithm">Hashing Algorithm to use</param> 
         /// <param name="nonce">GCM Nonce Token</param>
         /// <param name="salt">PBKDF2 Salt</param>
         /// <param name="hmacHash">Hash of Decrypted Data</param>
         /// <param name="itterations">Iterations for the PBKDF2 Key Derivation</param>                
         /// <returns></returns>
-        public Result<byte[], Exception> Decrypt(byte[] encryptedData, SecureString password, EncryptionAlgorithm algorithm,
-            ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> salt, ReadOnlySpan<byte> hmacHash, int itterations)
+        public Result<byte[], Exception> Decrypt(byte[] encryptedData, SecureString password, EncryptionAlgorithm encryptionAlgorithm,
+            CryptoShark.Enums.HashAlgorithm hashAlgorithm, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> salt, ReadOnlySpan<byte> hmacHash, int itterations)
         {
             try
             {
                 // Create the Engine
-                var engine = new EncryptionEngine(algorithm);
+                var engine = new EncryptionEngine(encryptionAlgorithm);
 
                 // Generate the Key
                 var keyTsk = PasswordDeriveBytes(password, salt, KEY_SIZE, itterations);
@@ -121,7 +124,7 @@ namespace CryptoShark
                 var decrypted = engine.Decrypt(encryptedData, keyTsk.Value, nonce);
 
                 // Validate Hash
-                var verifyTask = _cryptoSharkUtilities.Hmac(decrypted.AsMemory(), keyTsk.Value, Enums.HashAlgorithm.SHA2_384);
+                var verifyTask = _cryptoSharkUtilities.Hmac(decrypted.AsMemory(), keyTsk.Value, hashAlgorithm);
                 if (verifyTask.IsFailure)
                     return Result.Failure<byte[], Exception>(verifyTask.Error);
 
@@ -137,7 +140,6 @@ namespace CryptoShark
             }
         }
 
-        #region PrivateMethods
         private Result<byte[], Exception> PasswordDeriveBytes(SecureString password, ReadOnlySpan<byte> salt, int keySize, int itterations)
         {
             try
@@ -158,8 +160,7 @@ namespace CryptoShark
             try
             {
                 var salt = new byte[size];
-                using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-                    rng.GetNonZeroBytes(salt);
+               _secureRandom.NextBytes(salt);
 
                 return salt;
             }
@@ -169,7 +170,5 @@ namespace CryptoShark
                 return Result.Failure<byte[], Exception>(ex);
             }
         }
-
-        #endregion
     }
 }

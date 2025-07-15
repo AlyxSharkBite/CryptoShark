@@ -2,9 +2,11 @@
 using CryptoShark.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CryptoShark.Record
@@ -54,6 +56,21 @@ namespace CryptoShark.Record
         ///     Encryption Algorithm Used
         /// </summary>
         [Required]
-        public EncryptionAlgorithm Algorithm { get; init; }
+        public EncryptionAlgorithm EncryptionAlgorithm { get; init; }
+
+        /// <summary>
+        ///     Hashing Algorithm Used
+        /// </summary>
+        [Required]
+        public HashAlgorithm HashAlgorithm { get; init; }
+
+        /// <summary>
+        /// Padding 
+        /// Default: OAEPWithSHA-256AndMGF1Padding
+        /// </summary>
+        [Required]
+        [DefaultValue("OAEPWithSHA-256AndMGF1Padding")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.Never)]        
+        public string RsaPadding { get; init; }
     }
 }

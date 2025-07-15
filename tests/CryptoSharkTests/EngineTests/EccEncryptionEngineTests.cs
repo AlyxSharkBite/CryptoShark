@@ -46,17 +46,19 @@ namespace CryptoSharkTests.EngineTests
             var eccPrivateKey = _cryptoSharkUtilities.CreateEccKey(ECCurve.NamedCurves.nistP384, _password).Value;
             var eccPublicKey = _cryptoSharkUtilities.GetEccPublicKey(eccPrivateKey, _password).Value;
 
-            var encrypted = eccEncryption.Encrypt(_sampleData, eccPublicKey, eccPrivateKey, encryptionAlgorithm, _password);
+            var encrypted = eccEncryption.Encrypt(_sampleData, eccPublicKey, eccPrivateKey, encryptionAlgorithm,
+                CryptoShark.Enums.HashAlgorithm.SHA3_256, _password);
+
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(encrypted.Value, Is.Not.Null);
-            Assert.That(encrypted.Value.Algorithm, Is.EqualTo(encryptionAlgorithm));
+            Assert.That(encrypted.Value.EncryptionAlgorithm, Is.EqualTo(encryptionAlgorithm));
             Assert.That(encrypted.Value.Nonce, Is.Not.Null);
             Assert.That(encrypted.Value.PublicKey, Is.Not.Null);
             Assert.That(encrypted.Value.EncryptedData, Is.Not.Null);
             Assert.That(encrypted.Value.Signature, Is.Not.Null);
 
             var decrypted = eccEncryption.Decrypt(encrypted.Value.EncryptedData, eccPublicKey, eccPrivateKey, 
-                encryptionAlgorithm, encrypted.Value.Nonce, encrypted.Value.Signature, _password);
+                encryptionAlgorithm, encrypted.Value.HashAlgorithm, encrypted.Value.Nonce, encrypted.Value.Signature, _password);
 
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);

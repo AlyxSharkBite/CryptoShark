@@ -1,6 +1,10 @@
-﻿using Org.BouncyCastle.Asn1;
+﻿using CryptoShark.Enums;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Encodings;
+using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
@@ -15,6 +19,9 @@ using System.Threading.Tasks;
 
 namespace CryptoShark.Utilities
 {
+    /// <summary>
+    /// Low level Asymmetric Cipher Utilities
+    /// </summary>
     internal class AsymmetricCipherUtilities
     {
         private readonly SecureRandom _random = new SecureRandom();
@@ -37,6 +44,16 @@ namespace CryptoShark.Utilities
             ecKeyPairGen.Init(ecKeyGenParams);
             AsymmetricCipherKeyPair ecKeyPair = ecKeyPairGen.GenerateKeyPair();
             return ecKeyPair;
+        }
+
+        public AsymmetricCipherKeyPair GenerateRsaKeyPair(int keySize)
+        {
+            var keyPairGenerator = new RsaKeyPairGenerator();
+            var keyGenParams = new KeyGenerationParameters(_random, keySize);
+            keyPairGenerator.Init(keyGenParams);
+            AsymmetricCipherKeyPair rsaKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            return rsaKeyPair;
         }
 
         public byte[] WriteKeyPair(AsymmetricCipherKeyPair keyPair, SecureString password)
@@ -71,14 +88,66 @@ namespace CryptoShark.Utilities
             return keyPair;
         }
 
-        public AsymmetricKeyParameter ReadPublicKey(byte[] privateKeyData)
+        public AsymmetricKeyParameter ReadPublicKey(byte[] publicKeyData)
         {
-            using MemoryStream pemStream = new MemoryStream(privateKeyData);
+            using MemoryStream pemStream = new MemoryStream(publicKeyData);
             using StreamReader reader = new StreamReader(pemStream);
             using PemReader pemReader = new PemReader(reader);
             var publicKey = (AsymmetricKeyParameter)pemReader.ReadObject();
 
             return publicKey;
+        }
+
+        public IAsymmetricBlockCipher ParsePadding(string paddingStr)
+        {
+            try
+            {
+                var padding = paddingStr.Trim();
+                var idx = padding.LastIndexOf('/');
+                if (idx > -1)
+                    padding = padding.Substring(idx + 1);
+
+                if (padding.Contains("Pkcs1", StringComparison.InvariantCultureIgnoreCase))
+                    return new Pkcs1Encoding(new RsaEngine());
+
+                if (!padding.StartsWith("OAEPWith", StringComparison.InvariantCultureIgnoreCase))
+                    throw new ArgumentException($"Error Parsing Padding: Unkown Padding {paddingStr}");
+
+                padding = padding.ToUpper().Replace("OAEPWITH", String.Empty);
+
+                bool mfg1 = false;
+                if (padding.EndsWith("ANDMGF1PADDING", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    mfg1 = true;
+                    padding = padding.Replace("ANDMGF1PADDING", String.Empty);
+                }
+
+                if (padding.Contains('-'))
+                    padding = padding.Replace('-', '_');
+
+                HashAlgorithm hashAlgorithm;
+                if (!Enum.TryParse(padding, out hashAlgorithm))
+                    throw new ArgumentException($"Error Parsing Padding: Unknown Hash Algorithm {padding}");
+
+                return new OaepEncoding(
+                        cipher: new RsaEngine(),
+                        hash: GetDigest(hashAlgorithm),
+                        mgf1Hash: mfg1 ? GetDigest(hashAlgorithm) : null,
+                        encodingParams: null
+                    );
+            }
+            catch
+            {
+                return new OaepEncoding(new RsaEngine(), new Sha256Digest(), new Sha256Digest(), null);
+            }
+        }
+
+        private static IDigest GetDigest(HashAlgorithm algorithm)
+        {
+            if (algorithm == HashAlgorithm.NONE)
+                algorithm = HashAlgorithm.SHA_256;
+
+            return DigestUtilities.GetDigest(algorithm.ToString());
         }
     }
 }

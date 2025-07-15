@@ -1,28 +1,37 @@
 # CryptoShark
-Data Encryption Package for .NET 6
+## Cross Platform Data Encryption Package for .NET 9
 
 ## Version History
 **Version 1.0 - Initial Release**
-
 * Password Based Encryption
 * RSA Public/Private Key Encryption
 
-**Version 2.1 - Update March 2022**
-
+**Version 2.1**
 * .NET 6 Update
 * Added ECC Encryption 
 
-**Version 2.1.2 - Update April 2022**
+**Version 2.1.2**
 * Added back the ability to work with Pkcs8 Encrypted Keys
 
-**Version 3.0.0 - Update July 2025**
+**Version 3.0.0**
 * .NET 9 Update
 * Complete rewrite for easier use.
 * Supports logging via ILogger interface
 * Supports multiple forms of dependency injection
 
-*Version 3.1.0 - Update July 2025**
+**Version 3.1.0**
 * Replaced all .Net Ecc Cryptography Next Generation (CNG) with BouncyCastle code
+
+**Version 3.2.0**
+* Updated RSA Keys to use Encrypted PEM format same as ECC Keys
+* Replaced all .Net Rsa Cryptography Next Generation (CNG) with BouncyCastle code
+
+**Version 3.2.1**
+* Internal code updates to mke future enhaemnts easier
+* Exposed all the internal parts allowing supplying the desired options
+    * Hash Alorythm for verifying data integrity can now be chosen
+    * RSA Padding for RSA Encryption can now be set with stanard string 
+        * Example: 'OAEPWithSHA-256AndMGF1Padding'
 
 ## About
 Code written on macOS & Windows 11
@@ -49,6 +58,7 @@ Designed to fit your workflow, all public classes have interfaces for easy depen
 
 ## Keys
 * As of 3.1 Ecc Keys are in the Encrypted PEM Format. Yu can use ones created elsewhere if you want even, simply read the PEM file into a byte array and pass it in as the Ecc Private Key along with the passwor. So this gives you the flexibity to use ones created elsewhere, i.e. open ssl.
+* As of 3.2 Rsa Keys are stored the same way.
 
 ### Example ECC PEM Key
 ```-----BEGIN EC PRIVATE KEY-----
@@ -67,6 +77,27 @@ XkUqRQJQfo6KvmLYQJ1whegrVxA5Eu3GRW1wfMF4/+PewyfRp9JqtiFawEXpaM0w
 gKp8tdUKx2NMcvgDbpFgn1XenVuDN7pyZtsOWx5QDgphoL04hx27QGp4DbflshgA
 EeFw3nIc4Vq0OQozcUuanLgzeUT7e3hi2eW0Vm/n
 -----END EC PRIVATE KEY-----
+```
+
+### Example RSA PEM Key
+```-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: BF-OFB,45DAED7D531B4775
+
+mUsWdDxW3CoSAvat5ymXZNne0ZmhxRzXqRTwCtzgJLAJzTi+NY+VucVu2LoRgHX1
+Fmtp8EzRXzzPvxBanjSkwbdz36j97IUk+ZNxBCwFabR6P8BbFCCu36ZLlV41OT+C
+8UHy9/v41DVUOi5qYhqxzITEBiB0QC+pAuW+vo++ixcWMQzRFaFo8QTcnVaK2c4W
+hIIMbdaMaWh0qd9ElqSGA02YS9gcuE4DJF/aCq1A5hnV7BjoROYcqz45nBnqUa9m
+H4ygcpUQWAfOeI9kB9lrUlkb3KqZxxMQxANsDs/USxC4gELNZKsMT7ufK8gG2j+n
+/Tq2Ovldz6AupHfy0f3UEKUJsOgbKCoVL6WiW0Lzr9Nu9kYj/aHLuw7m343da7NB
+KX9pftNqikwaIe91HnpUyNXji7lENcOwif2EXT8uRBTJJ+Ea+0JJwna5x8vZGrcx
+EMlRbbvGzmQA+vr9tpaWKT/Qak86OGRubusWWjDxrQX/yPgciBJfMgI1ezVPR4vj
+9Am4rd25k4jh/K8hSRcFkKdWO/81GTaQtVVpv2hjBaaoZdHxPcWrHoNRR2ktq5XS
+7CyXPJIg1IsZImXgvBTtI/iiOPeo+TIG/2ich5KlGlIilqdDwg+R67xasn2Zcsfr
+3eip9Yx+B8WkcDe6l900bRQLpuQ/7C5Kmdlw5m5GbDxsQUj8SiScc2tBtai1V63L
+VfeIOQ41hD/WJehRBGMRzspUwNhs0FIO+QjHJW1ikWW8dJryKF/YpWr+1sTot3ri
+6yaSgvKZzsVaVPrGIxhTH8FuNvlODXgnIOfNVS0hMDE=
+-----END RSA PRIVATE KEY-----
 ```
 
 ## Interfaces:
