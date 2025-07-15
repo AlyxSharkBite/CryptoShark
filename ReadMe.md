@@ -61,7 +61,8 @@ Designed to fit your workflow, all public classes have interfaces for easy depen
 * As of 3.2 Rsa Keys are stored the same way.
 
 ### Example ECC PEM Key
-```-----BEGIN EC PRIVATE KEY-----
+```
+-----BEGIN EC PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: BF-OFB,8603D84AEEA59E80
 
@@ -80,7 +81,8 @@ EeFw3nIc4Vq0OQozcUuanLgzeUT7e3hi2eW0Vm/n
 ```
 
 ### Example RSA PEM Key
-```-----BEGIN RSA PRIVATE KEY-----
+```
+-----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: BF-OFB,45DAED7D531B4775
 
