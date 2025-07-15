@@ -24,7 +24,7 @@ namespace CryptoShark.Interfaces
         /// <summary>
         ///     Encryption Algorithm Used
         /// </summary>       
-        public EncryptionAlgorithm Algorithm { get; }
+        public EncryptionAlgorithm EncryptionAlgorithm { get; }
     }
 
     public interface ISemetricRecordMarker : IRecordMarker

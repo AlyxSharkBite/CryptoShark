@@ -79,7 +79,8 @@ public class Create
     {
         var provider = CryptoSharkCryptographyUtilities.Create();
 
-        Assert.Throws<CryptographicException>(() => provider.HashBytes(_sampleData, (CryptoShark.Enums.HashAlgorithm)16, CryptoShark.Enums.StringEncoding.Hex));
+        Assert.Throws<CryptographicException>(() => provider.HashBytes(_sampleData, (CryptoShark.Enums.HashAlgorithm)Byte.MaxValue, 
+            CryptoShark.Enums.StringEncoding.Hex));
     }
 
     [TestCaseSource(nameof(CreateLoggers))]
@@ -96,7 +97,7 @@ public class Create
     {
         var provider = CryptoSharkCryptographyUtilities.Create();
 
-        Assert.Throws<CryptographicException>(() => provider.HashBytes(_sampleData, (CryptoShark.Enums.HashAlgorithm)16));
+        Assert.Throws<CryptographicException>(() => provider.HashBytes(_sampleData, (CryptoShark.Enums.HashAlgorithm) Byte.MaxValue));
     }
 
     private static Array CreateLoggers()

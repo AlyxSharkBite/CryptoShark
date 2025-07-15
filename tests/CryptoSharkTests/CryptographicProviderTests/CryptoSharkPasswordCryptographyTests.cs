@@ -38,7 +38,8 @@ public class CryptoSharkPasswordCryptographyTests
     public void EncryptionSuccessTests(ILogger logger)
     {
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+            CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -57,7 +58,8 @@ public class CryptoSharkPasswordCryptographyTests
     public void EncryptionFailsInvalidParamsTests(ILogger logger)
     {
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, (CryptoShark.Enums.EncryptionAlgorithm) 15);
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+            (CryptoShark.Enums.EncryptionAlgorithm) 15, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         Assert.Throws<CryptographicException>(() => provider.Encrypt(request));
     }
@@ -66,7 +68,9 @@ public class CryptoSharkPasswordCryptographyTests
     public void DecryptionSuccessTests(ILogger logger)
     {
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, CryptoShark.Enums.EncryptionAlgorithm.Aes);
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+            CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+
         var encrypted = provider.Encrypt(request);
 
         var decrypted = provider.Decrypt(encrypted, StringToSecureString(_password));

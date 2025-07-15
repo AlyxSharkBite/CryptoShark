@@ -12,6 +12,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,6 +38,7 @@ namespace CryptoShark
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities;
+        private readonly SecureRandom _secureRandom;
 
         /// <summary>
         /// Constructor
@@ -48,20 +50,12 @@ namespace CryptoShark
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
             _secureStringUtilities = new SecureStringUtilities();
             _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
+            _secureRandom = new SecureRandom();
         }
-
-        /// <summary>
-        ///     Encrypts Data useing the ECC Keys Specified
-        ///     With specified encryption algorithm
-        /// </summary>
-        /// <param name="clearData">Data to encrypt</param>
-        /// <param name="eccPublicKey">ECC Key to Encrypt WITH</param>
-        /// <param name="eccPrivateKey">ECC Key to Sign WITH</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
-        /// <param name="password">Password for Private Key</param>    
-        /// <returns></returns>
+       
         public Result<EccCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, ReadOnlySpan<byte> eccPublicKey,
-            ReadOnlySpan<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm, SecureString password)
+            ReadOnlySpan<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm, Enums.HashAlgorithm hashAlgorithm,
+            SecureString password)
         {
             try
             {
@@ -76,7 +70,7 @@ namespace CryptoShark
                 if(keyResult.IsFailure)
                     return Result.Failure<EccCryptographyRecord, Exception>(keyResult.Error);
 
-                var hashResult = ComputeHash(clearData);
+                var hashResult = ComputeHash(clearData, hashAlgorithm);
                 if (hashResult.IsFailure)
                     return Result.Failure<EccCryptographyRecord, Exception>(hashResult.Error);
 
@@ -91,11 +85,12 @@ namespace CryptoShark
                 // Build the response
                 return new EccCryptographyRecord
                 {
-                    Algorithm = encryptionAlgorithm,
+                    EncryptionAlgorithm = encryptionAlgorithm,
                     PublicKey = eccPublicKey.ToArray(),
                     Signature = signedHashResult.Value,
                     EncryptedData = encrypted,
-                    Nonce = nonceResult.Value
+                    Nonce = nonceResult.Value,
+                    HashAlgorithm = hashAlgorithm
                 };                
             }
             catch (Exception ex)
@@ -117,8 +112,9 @@ namespace CryptoShark
         /// <param name="eccSignature">Signature</param>     
         /// <param name="password">Password for Private Key</param> 
         /// <returns></returns>
-        public Result<byte[], Exception> Decrypt(ReadOnlyMemory<byte> encryptedData, ReadOnlySpan<byte> eccPublicKey, ReadOnlySpan<byte> eccPrivateKey, 
-            EncryptionAlgorithm encryptionAlgorithm, ReadOnlySpan<byte> nonce,ReadOnlySpan<byte> eccSignature, SecureString password)
+        public Result<byte[], Exception> Decrypt(ReadOnlyMemory<byte> encryptedData, ReadOnlySpan<byte> eccPublicKey, 
+            ReadOnlySpan<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm, Enums.HashAlgorithm hashAlgorithm, 
+            ReadOnlySpan<byte> nonce,ReadOnlySpan<byte> eccSignature, SecureString password)
         {
             try
             {
@@ -134,7 +130,7 @@ namespace CryptoShark
                 var clearData = engine.Decrypt(encryptedData, keyResult.Value, nonce);
 
                 // Compute Hash
-                var hashResult = ComputeHash(clearData);
+                var hashResult = ComputeHash(clearData, hashAlgorithm);
                 if (hashResult.IsFailure)
                     return Result.Failure<byte[], Exception>(hashResult.Error);
 
@@ -175,9 +171,9 @@ namespace CryptoShark
             }
         }
 
-        private Result<byte[], Exception> ComputeHash(ReadOnlyMemory<byte> data)
+        private Result<byte[], Exception> ComputeHash(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
-            return _cryptoSharkUtilities.Hash(data, Enums.HashAlgorithm.SHA2_384);
+            return _cryptoSharkUtilities.Hash(data, hashAlgorithm);
         }
 
         private Result<byte[], Exception> SignHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> eccPrivateKey, SecureString password)
@@ -205,9 +201,8 @@ namespace CryptoShark
         {
             try
             {
-                var salt = new byte[size];
-                using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-                rng.GetNonZeroBytes(salt);
+                var salt = new byte[size];                
+                _secureRandom.NextBytes(salt);
 
                 return salt;
             }

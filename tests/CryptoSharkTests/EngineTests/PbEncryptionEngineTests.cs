@@ -41,10 +41,11 @@ namespace CryptoSharkTests.EngineTests
         {
             PBEncryption rsaEncryption = new PBEncryption(_mockLogger.Object);           
 
-            var encrypted = rsaEncryption.Encrypt(_sampleData, encryptionAlgorithm, _password);
+            var encrypted = rsaEncryption.Encrypt(_sampleData, encryptionAlgorithm, HashAlgorithm.SHA3_256, _password);
+
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(encrypted.Value, Is.Not.Null);
-            Assert.That(encrypted.Value.Algorithm, Is.EqualTo(encryptionAlgorithm));
+            Assert.That(encrypted.Value.EncryptionAlgorithm, Is.EqualTo(encryptionAlgorithm));
             Assert.That(encrypted.Value.Nonce, Is.Not.Null);
             Assert.That(encrypted.Value.Hash, Is.Not.Null);
             Assert.That(encrypted.Value.Salt, Is.Not.Null);
@@ -52,7 +53,8 @@ namespace CryptoSharkTests.EngineTests
             Assert.That(encrypted.Value.Iterations, Is.GreaterThan(0));
 
             var decrypted = rsaEncryption.Decrypt(encrypted.Value.EncryptedData, _password, encryptionAlgorithm,
-                encrypted.Value.Nonce, encrypted.Value.Salt, encrypted.Value.Hash, encrypted.Value.Iterations);
+                encrypted.Value.HashAlgorithm, encrypted.Value.Nonce, encrypted.Value.Salt, encrypted.Value.Hash, 
+                encrypted.Value.Iterations);
 
             Assert.That(encrypted.IsSuccess, Is.True);
             Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);

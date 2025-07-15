@@ -10,6 +10,8 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Signers;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Tls;
 using System;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -22,8 +24,7 @@ namespace CryptoShark
     ///     RSA Encryption
     /// </summary>
     internal sealed class RsaEncryption
-    {
-        private const int KEY_SIZE = 256;        
+    {               
         private readonly ILogger _logger;
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
@@ -37,18 +38,10 @@ namespace CryptoShark
             _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
         }
 
-        /// <summary>
-        ///     Encrypts Data useing the RSA Keys Specified
-        ///     With specified encryption algorithm
-        /// </summary>
-        /// <param name="clearData">Data to encrypt</param>
-        /// <param name="rsaPublicKey">RSA Key to Encrypt WITH</param>
-        /// <param name="rsaPrivateKey">RSA Key to Sign WITH</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>       
-        /// <param name="password">Password for Private Key</param> 
-        /// <returns></returns>
+        
         public Result<RsaCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, ReadOnlySpan<byte> rsaPublicKey, 
-            ReadOnlySpan<byte> rsaPrivateKey, EncryptionAlgorithm encryptionAlgorithm, SecureString password)
+            ReadOnlySpan<byte> rsaPrivateKey, Enums.EncryptionAlgorithm encryptionAlgorithm, Enums.HashAlgorithm hashAlgorithm,
+            SecureString password, string rsaPadding)
         {
             try
             {
@@ -59,11 +52,11 @@ namespace CryptoShark
                 if (nonceResult.IsFailure)
                     return Result.Failure<RsaCryptographyRecord, Exception>(nonceResult.Error);
 
-                var keyResult = GenerateKey(KEY_SIZE);
+                var keyResult = GenerateKey(encryptionAlgorithm.ToString());
                 if (keyResult.IsFailure)
                     return Result.Failure<RsaCryptographyRecord, Exception>(keyResult.Error);
 
-                var hashResult = ComputeHash(clearData);
+                var hashResult = ComputeHash(clearData, hashAlgorithm);
                 if (hashResult.IsFailure)
                     return Result.Failure<RsaCryptographyRecord, Exception>(hashResult.Error);
 
@@ -76,23 +69,25 @@ namespace CryptoShark
                     return Result.Failure<RsaCryptographyRecord, Exception>(rsaPublicKeyResult.Error);
 
                 // Encrypt the key
-                var keyEncryptResult = EncryptKey(keyResult.Value, rsaPublicKeyResult.Value);
+                var keyEncryptResult = EncryptKey(keyResult.Value, rsaPublicKeyResult.Value, rsaPadding);
                 if (keyEncryptResult.IsFailure)
                     return Result.Failure<RsaCryptographyRecord, Exception>(keyEncryptResult.Error);
 
                 // Sign Hash
-                var hashSignResult = SignHash(hashResult.Value, rsaPrivateKey, password);
+                var hashSignResult = SignHash(hashResult.Value, rsaPrivateKey, password, hashAlgorithm);
                 if (hashSignResult.IsFailure)
                     return Result.Failure<RsaCryptographyRecord, Exception>(hashSignResult.Error);
 
                 return new RsaCryptographyRecord
                 {
-                    Algorithm = encryptionAlgorithm,
+                    EncryptionAlgorithm = encryptionAlgorithm,
                     EncryptedData = encrypted,
                     EncryptionKey = keyEncryptResult.Value,
                     Nonce = nonceResult.Value,
                     PublicKey = rsaPublicKeyResult.Value,
-                    Signature = hashSignResult.Value
+                    Signature = hashSignResult.Value,
+                    HashAlgorithm = hashAlgorithm,
+                    RsaPadding = rsaPadding
                 };
             }
             catch (Exception ex)
@@ -103,28 +98,18 @@ namespace CryptoShark
 
         }
 
-        /// <summary>
-        ///     Decrypts Previously Encrypted Data
-        /// </summary>
-        /// <param name="encryptedData">Encrypted Data</param>
-        /// <param name="rsaPublicKey">Publi Key to Verify Signature WITH</param>
-        /// <param name="rsaPrivateKey">Private Key to Decrypt WITH</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm</param>
-        /// <param name="nonce">Nonce Token</param>
-        /// <param name="rsaSignature">Signature</param>
-        /// <param name="rsaEncryptedKey">Encrypted Encryptuion Key</param>
-        /// <param name="password">Password for encryption</param>
-        /// <returns></returns>
+        
         public Result<byte[], Exception> Decrypt(ReadOnlyMemory<byte> encryptedData, ReadOnlySpan<byte> rsaPublicKey, 
-            ReadOnlySpan<byte> rsaPrivateKey, EncryptionAlgorithm encryptionAlgorithm, ReadOnlySpan<byte> nonce, 
-            ReadOnlySpan<byte> rsaSignature, ReadOnlySpan<byte> rsaEncryptedKey, SecureString password)
+            ReadOnlySpan<byte> rsaPrivateKey, Enums.EncryptionAlgorithm encryptionAlgorithm, Enums.HashAlgorithm hashAlgorithm, 
+            ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> rsaSignature, ReadOnlySpan<byte> rsaEncryptedKey, SecureString password, 
+            string rsaPadding)
         {
             try
             {
                 var engine = new EncryptionEngine(encryptionAlgorithm);
 
                 // Decrypt Key            
-                var keyResult = DecryptKey(rsaEncryptedKey, rsaPrivateKey, password);
+                var keyResult = DecryptKey(rsaEncryptedKey, rsaPrivateKey, password, rsaPadding);
                 if (keyResult.IsFailure)
                     return Result.Failure<byte[], Exception>(keyResult.Error);
 
@@ -132,12 +117,12 @@ namespace CryptoShark
                 var clearData = engine.Decrypt(encryptedData, keyResult.Value, nonce);
 
                 // Compute Hash
-                var hashResult = ComputeHash(clearData);
+                var hashResult = ComputeHash(clearData, hashAlgorithm);
                 if (hashResult.IsFailure)
                     return Result.Failure<byte[], Exception>(hashResult.Error);
 
                 // Verify Hash
-                var verifyResult = VerifyHash(hashResult.Value, rsaSignature, rsaPublicKey);
+                var verifyResult = VerifyHash(hashResult.Value, rsaSignature, rsaPublicKey, hashAlgorithm);
                 if (verifyResult.IsFailure)
                     return Result.Failure<byte[], Exception>(verifyResult.Error);
 
@@ -153,7 +138,6 @@ namespace CryptoShark
             }
         }
 
-        #region PrivateMethods
         private Result<byte[], Exception> GenerateSalt(int size = 16)
         {
             try
@@ -172,15 +156,12 @@ namespace CryptoShark
 
         }
 
-        private Result<byte[], Exception> GenerateKey(int keySize)
+        private Result<byte[], Exception> GenerateKey(string algorithm)
         {
             try
             {
-                using var aes = AesCng.Create();
-
-                aes.KeySize = keySize;
-                aes.GenerateKey();
-                return aes.Key;
+                var keyGenerator = GeneratorUtilities.GetKeyGenerator(algorithm);
+                return keyGenerator.GenerateKey();
             }
             catch (Exception ex)
             {
@@ -189,16 +170,17 @@ namespace CryptoShark
             }
         }
 
-        private Result<byte[], Exception> EncryptKey(ReadOnlySpan<byte> encryptionKey, ReadOnlySpan<byte> rsaPublicKey)
+        private Result<byte[], Exception> EncryptKey(ReadOnlySpan<byte> encryptionKey, ReadOnlySpan<byte> rsaPublicKey,
+            string rsaPadding)
         {
             try
             {
                 var publicKey = _asymmetricCipherUtilities.ReadPublicKey(rsaPublicKey.ToArray());
-                var rsaEncryptor = new OaepEncoding(new RsaEngine(), new Sha3Digest(), new Sha3Digest(), null);
+                var rsaEncryptor = _asymmetricCipherUtilities.ParsePadding(rsaPadding);
                 rsaEncryptor.Init(true, publicKey);
 
                 var cypheredEncryptionKey = rsaEncryptor.ProcessBlock(encryptionKey.ToArray(), 0, encryptionKey.Length);
-
+                
                 return cypheredEncryptionKey;
             }
             catch (Exception ex)
@@ -208,12 +190,13 @@ namespace CryptoShark
             }
         }      
 
-        private Result<byte[], Exception> DecryptKey(ReadOnlySpan<byte> cypheredEncryptionKey, ReadOnlySpan<byte> rsaPrivateKey, SecureString password)
+        private Result<byte[], Exception> DecryptKey(ReadOnlySpan<byte> cypheredEncryptionKey, ReadOnlySpan<byte> rsaPrivateKey, 
+            SecureString password, string rsaPadding)
         {
             try
             {
                 var privateKey = _asymmetricCipherUtilities.ReadKeyPair(rsaPrivateKey.ToArray(), password).Private;
-                var rsaEncryptor = new OaepEncoding(new RsaEngine(), new Sha3Digest(), new Sha3Digest(), null);
+                var rsaEncryptor = _asymmetricCipherUtilities.ParsePadding(rsaPadding);
                 rsaEncryptor.Init(false, privateKey);
 
                 var encryptionKey = rsaEncryptor.ProcessBlock(cypheredEncryptionKey.ToArray(), 0, cypheredEncryptionKey.Length);
@@ -227,18 +210,19 @@ namespace CryptoShark
             }
         }       
 
-        private Result<byte[], Exception> ComputeHash(ReadOnlyMemory<byte> data)
+        private Result<byte[], Exception> ComputeHash(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
-            return _cryptoSharkUtilities.Hash(data, Enums.HashAlgorithm.SHA2_384);
+            return _cryptoSharkUtilities.Hash(data, hashAlgorithm);
         }       
 
-        private Result<byte[], Exception> SignHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> rsaPrivateKey, SecureString password)
+        private Result<byte[], Exception> SignHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> rsaPrivateKey, 
+            SecureString password, Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
                 var privateKey = _asymmetricCipherUtilities.ReadKeyPair(rsaPrivateKey.ToArray(), password).Private;
 
-                var signer = new RsaDigestSigner(new Sha3Digest());
+                var signer = new RsaDigestSigner(GetDigest(hashAlgorithm));
                 signer.Init(true, privateKey);
                 signer.BlockUpdate(hash.ToArray(), 0, hash.Length);
                 
@@ -251,13 +235,14 @@ namespace CryptoShark
             }
         }
 
-        private Result<bool, Exception> VerifyHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> rsaPublicKey)
+        private Result<bool, Exception> VerifyHash(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> signature, 
+            ReadOnlySpan<byte> rsaPublicKey, Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
                 var publicKey = _asymmetricCipherUtilities.ReadPublicKey(rsaPublicKey.ToArray());
 
-                var verifier = new RsaDigestSigner(new Sha3Digest());
+                var verifier = new RsaDigestSigner(GetDigest(hashAlgorithm));
                 verifier.Init(false, publicKey);
                 verifier.BlockUpdate(hash.ToArray(), 0, hash.Length);
 
@@ -268,8 +253,11 @@ namespace CryptoShark
                 _logger?.LogError(ex, "CryptoShark:RsaEncryption:VerifyHash {message}", ex.Message);
                 return Result.Failure<bool, Exception>(ex);
             }
-        }       
+        }
 
-        #endregion
+        private Org.BouncyCastle.Crypto.IDigest GetDigest(Enums.HashAlgorithm hashAlgorithm)
+        {
+            return DigestUtilities.GetDigest(hashAlgorithm.ToString());
+        }        
     }
 }

@@ -1,31 +1,37 @@
 # CryptoShark
-Data Encryption Package for .NET 6
+## Cross Platform Data Encryption Package for .NET 9
 
 ## Version History
 **Version 1.0 - Initial Release**
-
 * Password Based Encryption
 * RSA Public/Private Key Encryption
 
-**Version 2.1 - Update March 2022**
-
+**Version 2.1**
 * .NET 6 Update
 * Added ECC Encryption 
 
-**Version 2.1.2 - Update April 2022**
+**Version 2.1.2**
 * Added back the ability to work with Pkcs8 Encrypted Keys
 
-**Version 3.0.0 - Update July 2025**
+**Version 3.0.0**
 * .NET 9 Update
 * Complete rewrite for easier use.
 * Supports logging via ILogger interface
 * Supports multiple forms of dependency injection
 
-**Version 3.1.0 - Update July 2025**
+**Version 3.1.0**
 * Replaced all .Net Ecc Cryptography Next Generation (CNG) with BouncyCastle code
 
-**Version 3.2.0 - Update July 2025**
+**Version 3.2.0**
 * Updated RSA Keys to use Encrypted PEM format same as ECC Keys
+* Replaced all .Net Rsa Cryptography Next Generation (CNG) with BouncyCastle code
+
+**Version 3.2.1**
+* Internal code updates to mke future enhaemnts easier
+* Exposed all the internal parts allowing supplying the desired options
+    * Hash Alorythm for verifying data integrity can now be chosen
+    * RSA Padding for RSA Encryption can now be set with stanard string 
+        * Example: 'OAEPWithSHA-256AndMGF1Padding'
 
 ## About
 Code written on macOS & Windows 11

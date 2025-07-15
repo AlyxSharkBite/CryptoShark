@@ -55,6 +55,12 @@ namespace CryptoShark.Record
         ///     Encryption Algorithm Used
         /// </summary>
         [Required]
-        public EncryptionAlgorithm Algorithm { get; init; }
+        public EncryptionAlgorithm EncryptionAlgorithm { get; init; }
+
+        /// <summary>
+        ///     Hashing Algorithm Used
+        /// </summary>
+        [Required]
+        public HashAlgorithm HashAlgorithm { get; init; }
     }
 }

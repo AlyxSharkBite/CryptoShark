@@ -11,17 +11,21 @@ namespace CryptoShark.Requests
 {
     public class SemetricEncryptionRequest : IEncryptionRequest
     {
-        private SemetricEncryptionRequest(byte[] clearData, SecureString password, EncryptionAlgorithm algorithm)
+        private SemetricEncryptionRequest(byte[] clearData, SecureString password, EncryptionAlgorithm encryptionAlgorithm,
+            CryptoShark.Enums.HashAlgorithm hashAlgorithm)
         {
             ClearData = clearData;
             Password = password;
-            Algorithm = algorithm;
+            EncryptionAlgorithm = encryptionAlgorithm;
+            HashAlgorithm = hashAlgorithm;
         }
 
-        private SemetricEncryptionRequest(byte[] clearData, string password, EncryptionAlgorithm algorithm)
+        private SemetricEncryptionRequest(byte[] clearData, string password, EncryptionAlgorithm encryptionAlgorithm,
+            CryptoShark.Enums.HashAlgorithm hashAlgorithm)
         {
             ClearData = clearData;            
-            Algorithm = algorithm;
+            EncryptionAlgorithm = encryptionAlgorithm;
+            HashAlgorithm = hashAlgorithm;
 
             Password = new SecureString();
             foreach (var c in password.ToCharArray())
@@ -37,26 +41,15 @@ namespace CryptoShark.Requests
         public SecureString Password { get; private set; }
 
         /// <inheritdoc />
-        public EncryptionAlgorithm Algorithm { get; private set; }
+        public EncryptionAlgorithm EncryptionAlgorithm { get; private set; }
 
-        /// <summary>
-        /// Create's the Encryption Request
-        /// </summary>
-        /// <param name="clearData"></param>
-        /// <param name="password"></param>
-        /// <param name="algorithm"></param>
-        /// <returns></returns>
-        public static IEncryptionRequest CreateRequest(byte[] clearData, SecureString password, EncryptionAlgorithm algorithm) 
-            => new SemetricEncryptionRequest(clearData, password, algorithm);
-
-        /// <summary>
-        /// Create's the Encryption Request
-        /// </summary>
-        /// <param name="clearData"></param>
-        /// <param name="password"></param>
-        /// <param name="algorithm"></param>
-        /// <returns></returns>
-        public static IEncryptionRequest CreateRequest(byte[] clearData, string password, EncryptionAlgorithm algorithm)
-            => new SemetricEncryptionRequest(clearData, password, algorithm);
+        /// <inheritdoc />
+        public HashAlgorithm HashAlgorithm { get; private set; }
+        
+        public static IEncryptionRequest CreateRequest(byte[] clearData, SecureString password, EncryptionAlgorithm encryptionAlgorithm, CryptoShark.Enums.HashAlgorithm hashAlgorithm) 
+            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm);
+        
+        public static IEncryptionRequest CreateRequest(byte[] clearData, string password, EncryptionAlgorithm encryptionAlgorithm, CryptoShark.Enums.HashAlgorithm hashAlgorithm)
+            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm);
     }
 }
