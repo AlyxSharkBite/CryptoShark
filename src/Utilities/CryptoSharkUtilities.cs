@@ -2,12 +2,20 @@
 using CryptoShark.Interfaces;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.OpenSsl;
+using Org.BouncyCastle.Security;
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
+using System.Text;
 
 [assembly: InternalsVisibleTo("CryptoSharkTests")]
 namespace CryptoShark.Utilities
@@ -16,6 +24,8 @@ namespace CryptoShark.Utilities
     {   
         private static readonly object _lock = new object();      
         private readonly SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
+        private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
+
 
         public Result<byte[], Exception> CreateEccKey(ECCurve curve, SecureString password)
         { 
@@ -25,9 +35,10 @@ namespace CryptoShark.Utilities
 
                 lock (_lock)
                 {
-                    using var diffieHellman = ECDiffieHellmanCng.Create(curve);
-                    return diffieHellman.ExportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password),
-                        new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA384, 10000));
+                    var domainParameters = _asymmetricCipherUtilities.EcGetBuiltInDomainParameters(curve);
+                    var keyPair = _asymmetricCipherUtilities.GenerateECDHKeyPair(domainParameters);
+
+                    return _asymmetricCipherUtilities.WriteKeyPair(keyPair, password);
                 }
             }
             catch (Exception ex)
@@ -43,10 +54,8 @@ namespace CryptoShark.Utilities
             {
                 lock (_lock)
                 {
-                    using var diffieHellman = ECDiffieHellmanCng.Create();
-
-                    diffieHellman.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), encryptedEccKey, out var _);
-                    return diffieHellman.ExportSubjectPublicKeyInfo();
+                    var keyPair = _asymmetricCipherUtilities.ReadKeyPair(encryptedEccKey.ToArray(), password);
+                    return _asymmetricCipherUtilities.WritePublicKey(keyPair.Public);
                 }
             }
             catch (Exception ex)
@@ -203,6 +212,6 @@ namespace CryptoShark.Utilities
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
                 return Result.Failure<string, Exception>(ex);
             }
-        }
+        }       
     }
 }
