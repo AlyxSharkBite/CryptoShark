@@ -47,6 +47,28 @@ Designed to fit your workflow, all public classes have interfaces for easy depen
 * Static Create Methods
 * Traditional Constructiors
 
+## Keys
+* As of 3.1 Ecc Keys are in the Encrypted PEM Format. Yu can use ones created elsewhere if you want even, simply read the PEM file into a byte array and pass it in as the Ecc Private Key along with the passwor. So this gives you the flexibity to use ones created elsewhere, i.e. open ssl.
+
+### Example ECC PEM Key
+`-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: BF-OFB,8603D84AEEA59E80
+
+obqDJP9JA/Dfv5rwlgxyk6+aCyGPHRQ0xHKog5/fcULQbHQhFfe9p+LzXskZEehr
+K5hGjVOe7lb0vnViE2v36KUdAXvE0yP9Jz0tx2poUKIPB1Neg8w1rxJJWBeBok5s
+1nE0oaZLfjowykgLef1QmAOCcMSf3NWH8sBh4JE39ja2yLb35OD6MT0P7lZCcAes
+kBWyzyhrWTGWcJUqYtEWcz98PmNDFUFSld2hQFsGX5koYrAQLGCFp60sZ0cRVkRS
+kC4H9sdC6+zGPP1McUjOlhA40R5uUMOL09PMOa0/P0+e1QkHIajbcEXqbr3XjSSW
+KJOqYZd48HG1Fc/fqpLYhUjye1TSG4gY/XevJFkdpuJqgYYZbcJZL/wqSmva+d0R
+xYDWOUHIuvSa3vJo1uH1EbHAONaLnO0AQUM3fHsLS8JiSJpUDVMuBtnueW7ohsRR
+HSJDlSq5JVJZ44nRKBYdfKGuyoqKOGHMfyHOGbDUOBLNSmdBNb9rNEAV+UFB8Ex8
+XkUqRQJQfo6KvmLYQJ1whegrVxA5Eu3GRW1wfMF4/+PewyfRp9JqtiFawEXpaM0w
+gKp8tdUKx2NMcvgDbpFgn1XenVuDN7pyZtsOWx5QDgphoL04hx27QGp4DbflshgA
+EeFw3nIc4Vq0OQozcUuanLgzeUT7e3hi2eW0Vm/n
+-----END EC PRIVATE KEY-----
+`
+
 ## Interfaces:
 
 ### ICryptoSharkCryptographyUtilities (Implimented by CryptoSharkCryptographyUtilities)
