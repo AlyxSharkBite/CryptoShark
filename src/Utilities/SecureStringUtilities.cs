@@ -25,6 +25,21 @@ namespace CryptoShark.Utilities
             }
         }
 
+        public char[] SecureStringToCharArray(SecureString value)
+        {
+            IntPtr bstr = IntPtr.Zero;
+            try
+            {
+                bstr = Marshal.SecureStringToBSTR(value);
+                return Marshal.PtrToStringBSTR(bstr).ToCharArray();
+            }
+            finally
+            {
+                if (bstr != IntPtr.Zero)
+                    Marshal.ZeroFreeBSTR(bstr);
+            }
+        }
+
         public SecureString StringToSecureString(string value)
         {
             var secureString = new SecureString();

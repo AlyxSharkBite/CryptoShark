@@ -21,6 +21,9 @@ Data Encryption Package for .NET 6
 * Supports logging via ILogger interface
 * Supports multiple forms of dependency injection
 
+*Version 3.1.0 - Update July 2025**
+* Replaced all .Net Ecc Cryptography Next Generation (CNG) with BouncyCastle code
+
 ## About
 Code written on macOS & Windows 11
 

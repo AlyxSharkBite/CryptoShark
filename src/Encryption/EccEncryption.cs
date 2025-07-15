@@ -5,14 +5,24 @@ using CryptoShark.Record;
 using CryptoShark.Utilities;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 [assembly: InternalsVisibleTo("CryptoSharkTests")]
 namespace CryptoShark
@@ -26,6 +36,7 @@ namespace CryptoShark
         private readonly ILogger _logger;
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
+        private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities;
 
         /// <summary>
         /// Constructor
@@ -36,6 +47,7 @@ namespace CryptoShark
             _logger = logger;
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
             _secureStringUtilities = new SecureStringUtilities();
+            _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
         }
 
         /// <summary>
@@ -60,7 +72,7 @@ namespace CryptoShark
                 if (nonceResult.IsFailure)
                     return Result.Failure<EccCryptographyRecord, Exception>(nonceResult.Error);
 
-                var keyResult = GenerateKey(eccPrivateKey, eccPublicKey, password);
+                var keyResult = GenerateKey(eccPrivateKey, eccPublicKey, nonceResult.Value, password);
                 if(keyResult.IsFailure)
                     return Result.Failure<EccCryptographyRecord, Exception>(keyResult.Error);
 
@@ -114,7 +126,7 @@ namespace CryptoShark
                 var engine = new EncryptionEngine(encryptionAlgorithm);
 
                 // Derive the Key
-                var keyResult = GenerateKey(eccPrivateKey, eccPublicKey, password);
+                var keyResult = GenerateKey(eccPrivateKey, eccPublicKey, nonce, password);
                 if (keyResult.IsFailure)
                     return Result.Failure<byte[], Exception>(keyResult.Error);
 
@@ -148,10 +160,13 @@ namespace CryptoShark
         {
             try
             {
-                using var dsa = ECDsaCng.Create();               
-                dsa.ImportSubjectPublicKeyInfo(eccPublicKey, out var _);
+                var publicKey = _asymmetricCipherUtilities.ReadPublicKey(eccPublicKey.ToArray());
+                var dsaSignature = ECDsaSignature.FromByteArray(signature.ToArray());
 
-                return dsa.VerifyHash(hash.ToArray(), signature.ToArray(), DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+                var signer = new ECDsaSigner();
+                signer.Init(false, publicKey);
+
+                return signer.VerifySignature(hash.ToArray(), dsaSignature.r, dsaSignature.s);
             }
             catch (Exception ex)
             {
@@ -169,10 +184,15 @@ namespace CryptoShark
         {   
             try
             {
-                using var dsa = ECDsaCng.Create();
-                dsa.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), eccPrivateKey, out var _); ;
+                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(eccPrivateKey.ToArray(), password).Private;
 
-                return dsa.SignHash(hash.ToArray(), DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+                var signer = new ECDsaSigner();
+                signer.Init(true, privateKey);
+                var signature = signer.GenerateSignature(hash.ToArray());
+
+                ECDsaSignature dsaSignature = new ECDsaSignature(signature[0], signature[1]);
+
+                return dsaSignature.ToArray();               
             }
             catch (Exception ex)
             {
@@ -198,19 +218,26 @@ namespace CryptoShark
             }
         }
 
-        private Result<byte[], Exception> GenerateKey(ReadOnlySpan<byte> eccPrivateKey, ReadOnlySpan<byte> eccPublicKey, SecureString password)
+        private Result<byte[], Exception> GenerateKey(ReadOnlySpan<byte> eccPrivateKey, ReadOnlySpan<byte> eccPublicKey,
+            ReadOnlySpan<byte> salt, SecureString password)
         {            
             try
             {
-                using var diffieHellman = ECDiffieHellmanCng.Create();
-                using var diffieHellman2 = ECDiffieHellmanCng.Create();                
+                byte[] derivedKey = new byte[256 / 8];
 
-                diffieHellman.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), eccPrivateKey, out var _); ;
-                diffieHellman2.ImportSubjectPublicKeyInfo(eccPublicKey, out var _);
+                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(eccPrivateKey.ToArray(), password).Private;
+                var publicKey = _asymmetricCipherUtilities.ReadPublicKey(eccPublicKey.ToArray());
 
-                return diffieHellman.DeriveKeyFromHash(diffieHellman2.PublicKey, HashAlgorithmName.SHA256)
-                    .Take(KEY_SIZE / 8)
-                    .ToArray();
+                var exch = new Org.BouncyCastle.Crypto.Agreement.ECDHBasicAgreement();
+                exch.Init(privateKey);
+                var seed = exch.CalculateAgreement(publicKey).ToByteArray();
+
+                var hkdf = new HkdfBytesGenerator(new Sha3Digest());
+                hkdf.Init(new HkdfParameters(seed, salt.ToArray(), null));                
+                hkdf.GenerateBytes(derivedKey, 0, derivedKey.Length);
+
+                return derivedKey;
+
             }
             catch (Exception ex)
             {
