@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Asn1;
+﻿using CryptoShark.Enums;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
@@ -15,6 +16,9 @@ using System.Threading.Tasks;
 
 namespace CryptoShark.Utilities
 {
+    /// <summary>
+    /// Low level Asymmetric Cipher Utilities
+    /// </summary>
     internal class AsymmetricCipherUtilities
     {
         private readonly SecureRandom _random = new SecureRandom();
@@ -37,6 +41,16 @@ namespace CryptoShark.Utilities
             ecKeyPairGen.Init(ecKeyGenParams);
             AsymmetricCipherKeyPair ecKeyPair = ecKeyPairGen.GenerateKeyPair();
             return ecKeyPair;
+        }
+
+        public AsymmetricCipherKeyPair GenerateRsaKeyPair(int keySize)
+        {
+            var keyPairGenerator = new RsaKeyPairGenerator();
+            var keyGenParams = new KeyGenerationParameters(_random, keySize);
+            keyPairGenerator.Init(keyGenParams);
+            AsymmetricCipherKeyPair rsaKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            return rsaKeyPair;
         }
 
         public byte[] WriteKeyPair(AsymmetricCipherKeyPair keyPair, SecureString password)
@@ -71,9 +85,9 @@ namespace CryptoShark.Utilities
             return keyPair;
         }
 
-        public AsymmetricKeyParameter ReadPublicKey(byte[] privateKeyData)
+        public AsymmetricKeyParameter ReadPublicKey(byte[] publicKeyData)
         {
-            using MemoryStream pemStream = new MemoryStream(privateKeyData);
+            using MemoryStream pemStream = new MemoryStream(publicKeyData);
             using StreamReader reader = new StreamReader(pemStream);
             using PemReader pemReader = new PemReader(reader);
             var publicKey = (AsymmetricKeyParameter)pemReader.ReadObject();

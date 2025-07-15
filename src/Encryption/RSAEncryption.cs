@@ -5,6 +5,11 @@ using CryptoShark.Record;
 using CryptoShark.Utilities;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Encodings;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Signers;
 using System;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -22,12 +27,14 @@ namespace CryptoShark
         private readonly ILogger _logger;
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
+        private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities;
 
         public RsaEncryption(ILogger logger)
         {
             _logger = logger;
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
             _secureStringUtilities = new SecureStringUtilities();
+            _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
         }
 
         /// <summary>
@@ -182,14 +189,17 @@ namespace CryptoShark
             }
         }
 
-        private Result<byte[], Exception> EncryptKey(ReadOnlySpan<byte> key, ReadOnlySpan<byte> rsaPublicKey)
+        private Result<byte[], Exception> EncryptKey(ReadOnlySpan<byte> encryptionKey, ReadOnlySpan<byte> rsaPublicKey)
         {
             try
             {
-                using var rsa = RSACng.Create();
+                var publicKey = _asymmetricCipherUtilities.ReadPublicKey(rsaPublicKey.ToArray());
+                var rsaEncryptor = new OaepEncoding(new RsaEngine(), new Sha3Digest(), new Sha3Digest(), null);
+                rsaEncryptor.Init(true, publicKey);
 
-                rsa.ImportRSAPublicKey(rsaPublicKey, out var _);
-                return rsa.Encrypt(key.ToArray(), RSAEncryptionPadding.Pkcs1);
+                var cypheredEncryptionKey = rsaEncryptor.ProcessBlock(encryptionKey.ToArray(), 0, encryptionKey.Length);
+
+                return cypheredEncryptionKey;
             }
             catch (Exception ex)
             {
@@ -198,14 +208,17 @@ namespace CryptoShark
             }
         }      
 
-        private Result<byte[], Exception> DecryptKey(ReadOnlySpan<byte> encryptedKey, ReadOnlySpan<byte> rsaPrivateKey, SecureString password)
+        private Result<byte[], Exception> DecryptKey(ReadOnlySpan<byte> cypheredEncryptionKey, ReadOnlySpan<byte> rsaPrivateKey, SecureString password)
         {
             try
             {
-                using var rsa = RSACng.Create();
+                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(rsaPrivateKey.ToArray(), password).Private;
+                var rsaEncryptor = new OaepEncoding(new RsaEngine(), new Sha3Digest(), new Sha3Digest(), null);
+                rsaEncryptor.Init(false, privateKey);
 
-                rsa.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), rsaPrivateKey, out var _);
-                return rsa.Decrypt(encryptedKey.ToArray(), RSAEncryptionPadding.Pkcs1);
+                var encryptionKey = rsaEncryptor.ProcessBlock(cypheredEncryptionKey.ToArray(), 0, cypheredEncryptionKey.Length);
+
+                return encryptionKey;
             }
             catch (Exception ex)
             {
@@ -223,10 +236,13 @@ namespace CryptoShark
         {
             try
             {
-                using var rsa = RSACng.Create();
+                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(rsaPrivateKey.ToArray(), password).Private;
 
-                rsa.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), rsaPrivateKey, out var _);
-                return rsa.SignHash(hash.ToArray(), HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1);
+                var signer = new RsaDigestSigner(new Sha3Digest());
+                signer.Init(true, privateKey);
+                signer.BlockUpdate(hash.ToArray(), 0, hash.Length);
+                
+                return signer.GenerateSignature();
             }
             catch (Exception ex)
             {
@@ -239,10 +255,13 @@ namespace CryptoShark
         {
             try
             {
-                using var rsa = RSACng.Create();
+                var publicKey = _asymmetricCipherUtilities.ReadPublicKey(rsaPublicKey.ToArray());
 
-                rsa.ImportRSAPublicKey(rsaPublicKey, out var _);
-                return rsa.VerifyHash(hash.ToArray(), signature.ToArray(), HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1);
+                var verifier = new RsaDigestSigner(new Sha3Digest());
+                verifier.Init(false, publicKey);
+                verifier.BlockUpdate(hash.ToArray(), 0, hash.Length);
+
+                return verifier.VerifySignature(signature.ToArray());
             }
             catch (Exception ex)
             {

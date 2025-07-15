@@ -71,9 +71,8 @@ namespace CryptoShark.Utilities
             {
                 lock (_lock)
                 {
-                    using var rsa = RSACng.Create((int)keySize);
-                    return rsa.ExportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password),
-                       new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA384, 10000));
+                    var keyPair = _asymmetricCipherUtilities.GenerateRsaKeyPair((int)keySize);
+                    return _asymmetricCipherUtilities.WriteKeyPair(keyPair, password);
                 }
             }
             catch (Exception ex)
@@ -89,10 +88,8 @@ namespace CryptoShark.Utilities
             {
                 lock (_lock)
                 {
-                    using var rsa = RSACng.Create();
-
-                    rsa.ImportEncryptedPkcs8PrivateKey(_secureStringUtilities.SecureStringToString(password), encryptedRsaKey, out var _);
-                    return rsa.ExportRSAPublicKey();
+                    var keyPair = _asymmetricCipherUtilities.ReadKeyPair(encryptedRsaKey.ToArray(), password);
+                    return _asymmetricCipherUtilities.WritePublicKey(keyPair.Public);
                 }
             }
             catch (Exception ex)
