@@ -6,8 +6,8 @@
     <Nullable>disable</Nullable>
     <SignAssembly>False</SignAssembly>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>3.0.0</AssemblyVersion>
-    <FileVersion>3.0.0</FileVersion>
+    <AssemblyVersion>3.1.0</AssemblyVersion>
+    <FileVersion>3.1.0</FileVersion>
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/AlyxSharkBite/CryptoShark</PackageProjectUrl>
     <Copyright>2025</Copyright>
