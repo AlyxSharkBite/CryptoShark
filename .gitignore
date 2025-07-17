@@ -59,7 +59,31 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+
+# General
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon[]
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
