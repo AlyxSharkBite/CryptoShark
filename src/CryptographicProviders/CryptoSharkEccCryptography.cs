@@ -29,7 +29,7 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password)
+        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password)
         {
             EccCryptographyRecord record = null;
 
@@ -49,7 +49,7 @@ namespace CryptoShark.CryptographicProviders
             if (decryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", decryptionResult.Error);
 
-            return decryptionResult.Value.AsMemory();
+            return decryptionResult.Value;
         }
 
         /// <summary>

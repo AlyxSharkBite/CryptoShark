@@ -17,7 +17,7 @@ namespace CryptoSharkTests.UtilityTests
     {
         private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
 
-        private byte[] _sampleData;        
+        private ReadOnlyMemory<byte> _sampleData;        
         private Mock<ILogger> _mockLogger;
         private SecureString _password;
         private static readonly object _lock = new object();
@@ -43,7 +43,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password);
             Assert.That(privateKeyResult.IsSuccess, Is.True);
-            Assert.That(privateKeyResult.Value, Is.Not.Null);
+            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
@@ -55,7 +55,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value, Is.Not.Null);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -65,7 +65,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password);
             Assert.That(keyResult.IsSuccess, Is.True);
-            Assert.That(keyResult.Value, Is.Not.Null);
+            Assert.That(keyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -77,7 +77,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var publicKeyResult = cryptoSharkUtilities.GetRsaPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value, Is.Not.Null);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -86,14 +86,14 @@ namespace CryptoSharkTests.UtilityTests
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
             foreach(StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsMemory(), enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hash(_sampleData, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsSpan(), enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hash(_sampleData, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
@@ -104,13 +104,13 @@ namespace CryptoSharkTests.UtilityTests
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsMemory(), hashAlgorithm);
+            var hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
-            hashResult = cryptoSharkUtilities.Hash(_sampleData.AsSpan(), hashAlgorithm);
+            hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -121,14 +121,14 @@ namespace CryptoSharkTests.UtilityTests
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsMemory(), key, enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsSpan(), key, enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
@@ -140,19 +140,19 @@ namespace CryptoSharkTests.UtilityTests
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
             var key = GetKey();
 
-            var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsMemory(), key, hashAlgorithm);
+            var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
-            hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsSpan(), key, hashAlgorithm);
+            hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
         }
 
-        private static ReadOnlySpan<byte> GetKey()
+        private static ReadOnlyMemory<byte> GetKey()
         {
-            byte[] key = null;
+            ReadOnlyMemory<byte> key = null;
             lock (_lock)
             {
                 using var aesCng = AesCng.Create();
@@ -160,7 +160,7 @@ namespace CryptoSharkTests.UtilityTests
                 aesCng.GenerateKey();
                 key = aesCng.Key;
             }
-            return new ReadOnlySpan<byte>(key);
+            return key;
         }
 
         private static Array GetStringEncodings()

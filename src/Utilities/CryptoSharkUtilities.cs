@@ -27,7 +27,7 @@ namespace CryptoShark.Utilities
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
 
 
-        public Result<byte[], Exception> CreateEccKey(ECCurve curve, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> CreateEccKey(ECCurve curve, SecureString password)
         { 
             try
             {
@@ -44,11 +44,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateEccKey {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }            
         }
 
-        public Result<byte[], Exception> GetEccPublicKey(ReadOnlySpan<byte> encryptedEccKey, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> GetEccPublicKey(ReadOnlyMemory<byte> encryptedEccKey, SecureString password)
         {
             try
             {
@@ -61,11 +61,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetEccPublicKey {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<byte[], Exception> CreateRsaKey(RsaKeySize keySize, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> CreateRsaKey(RsaKeySize keySize, SecureString password)
         {
             try
             {
@@ -78,11 +78,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateRsaKey {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<byte[], Exception> GetRsaPublicKey(ReadOnlySpan<byte> encryptedRsaKey, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> GetRsaPublicKey(ReadOnlyMemory<byte> encryptedRsaKey, SecureString password)
         {           
             try
             {
@@ -95,21 +95,7 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetRsaPublicKey {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
-            }
-        }
-       
-        public Result<string, Exception> Hash(ReadOnlySpan<byte> data, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
-        {
-            try
-            {
-                var engine = new Engine.HashEngine(hashAlgorithm);
-                return engine.Hash(data.ToArray(), encoding);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
-                return Result.Failure<string, Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
@@ -127,7 +113,7 @@ namespace CryptoShark.Utilities
             }
         }
 
-        public Result<byte[], Exception> Hash(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm)
+        public Result<ReadOnlyMemory<byte>, Exception> Hash(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
             try 
             {
@@ -137,25 +123,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
-
-        public Result<byte[], Exception> Hash(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
-        {
-            try
-            {
-                var engine = new Engine.HashEngine(hashAlgorithm);
-                return engine.Hash(data.ToArray());
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
-            }
-        }
-
-        public Result<byte[], Exception> Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, Enums.HashAlgorithm hashAlgorithm)
+        
+        public Result<ReadOnlyMemory<byte>, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
@@ -165,25 +137,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<byte[], Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, Enums.HashAlgorithm hashAlgorithm)
-        {
-            try
-            {
-                var engine = new Engine.HashEngine(hashAlgorithm);
-                return engine.Hmac(data.ToArray(), key);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
-            }
-        }
-
-        public Result<string, Exception> Hmac(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
+        public Result<string, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
@@ -196,19 +154,5 @@ namespace CryptoShark.Utilities
                 return Result.Failure<string, Exception>(ex);
             }
         }
-
-        public Result<string, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
-        {
-            try
-            {
-                var engine = new Engine.HashEngine(hashAlgorithm);
-                return engine.Hmac(data.ToArray(), key, encoding);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
-                return Result.Failure<string, Exception>(ex);
-            }
-        }       
-    }
+	}
 }

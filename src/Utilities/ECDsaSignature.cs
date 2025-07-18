@@ -37,7 +37,7 @@ namespace CryptoShark.Utilities
             _additionalData = new Dictionary<string, JToken>();
         }
 
-        public byte[] ToArray()
+        public ReadOnlyMemory<byte> ToArray()
         {
             using MemoryStream bsonstream = new MemoryStream();
             using BinaryWriter binWriter = new BinaryWriter(bsonstream);
@@ -48,9 +48,9 @@ namespace CryptoShark.Utilities
             return bsonstream.ToArray();
         }
 
-        public static ECDsaSignature FromByteArray(byte[] data)
+        public static ECDsaSignature FromByteArray(ReadOnlyMemory<byte> data)
         {
-            using MemoryStream bsonStream = new MemoryStream(data);
+            using MemoryStream bsonStream = new MemoryStream(data.ToArray());
             using BinaryReader binReader = new BinaryReader(bsonStream);
             using BsonDataReader bsonDataReader = new BsonDataReader(binReader);
             JsonSerializer serializer = new JsonSerializer();

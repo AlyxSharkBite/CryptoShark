@@ -47,7 +47,7 @@ namespace CryptoShark.CryptographicProviders
             if (decryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", decryptionResult.Error);
          
-            return decryptionResult.Value.AsMemory();
+            return decryptionResult.Value;
         }
 
         /// <inheritdoc />

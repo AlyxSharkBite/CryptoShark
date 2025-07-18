@@ -56,7 +56,7 @@ namespace CryptoShark.Utilities
             return rsaKeyPair;
         }
 
-        public byte[] WriteKeyPair(AsymmetricCipherKeyPair keyPair, SecureString password)
+        public ReadOnlyMemory<byte> WriteKeyPair(AsymmetricCipherKeyPair keyPair, SecureString password)
         {
             using MemoryStream pemStream = new MemoryStream();
             using StreamWriter streamWriter = new StreamWriter(pemStream);
@@ -67,7 +67,7 @@ namespace CryptoShark.Utilities
             return pemStream.ToArray();
         }
 
-        public byte[] WritePublicKey(AsymmetricKeyParameter publicKey)
+        public ReadOnlyMemory<byte> WritePublicKey(AsymmetricKeyParameter publicKey)
         {
             using MemoryStream pemStream = new MemoryStream();
             using StreamWriter streamWriter = new StreamWriter(pemStream);
@@ -78,9 +78,9 @@ namespace CryptoShark.Utilities
             return pemStream.ToArray();
         }
 
-        public AsymmetricCipherKeyPair ReadKeyPair(byte[] privateKeyData, SecureString password)
+        public AsymmetricCipherKeyPair ReadKeyPair(ReadOnlyMemory<byte> privateKeyData, SecureString password)
         {
-            using MemoryStream pemStream = new MemoryStream(privateKeyData);
+            using MemoryStream pemStream = new MemoryStream(privateKeyData.ToArray());
             using StreamReader reader = new StreamReader(pemStream);
             using PemReader pemReader = new PemReader(reader, new PasswordFinder(password));
             var keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
@@ -88,9 +88,9 @@ namespace CryptoShark.Utilities
             return keyPair;
         }
 
-        public AsymmetricKeyParameter ReadPublicKey(byte[] publicKeyData)
+        public AsymmetricKeyParameter ReadPublicKey(ReadOnlyMemory<byte> publicKeyData)
         {
-            using MemoryStream pemStream = new MemoryStream(publicKeyData);
+            using MemoryStream pemStream = new MemoryStream(publicKeyData.ToArray());
             using StreamReader reader = new StreamReader(pemStream);
             using PemReader pemReader = new PemReader(reader);
             var publicKey = (AsymmetricKeyParameter)pemReader.ReadObject();

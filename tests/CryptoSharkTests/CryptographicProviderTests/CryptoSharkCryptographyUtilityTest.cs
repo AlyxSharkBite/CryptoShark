@@ -12,7 +12,7 @@ public class Create
 {    
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
     private readonly string _password = "Abc123";
-    private readonly byte[] _sampleData = new byte[7514];
+    private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514];
 
     [SetUp]
     public void Setup()

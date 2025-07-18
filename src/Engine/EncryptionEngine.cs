@@ -25,7 +25,7 @@ namespace CryptoShark.Engine
         /// <param name="key">Encryotion Key</param>
         /// <param name="nonce">Nonce Token</param>
         /// <returns></returns>
-        public byte[] Encrypt(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+        public ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce)
         {
             // Create the Encryption Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
@@ -65,7 +65,7 @@ namespace CryptoShark.Engine
         /// <param name="key">Encryption Key</param>
         /// <param name="nonce">Nonce Token</param>
         /// <returns></returns>
-        public byte[] Decrypt(ReadOnlyMemory<byte> data, ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce)
         {
             // Create the Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);

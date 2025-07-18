@@ -38,7 +38,7 @@ namespace CryptoShark.Utilities
             if (result.IsFailure)
                 throw new SerializationException($"CryptoShark:RecordSerializer failed to serialize {record.GetType().Name}", result.Error);
 
-            return new ReadOnlyMemory<byte>(result.Value);
+            return result.Value;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace CryptoShark.Utilities
             return result.Value;
         }
 
-        private Result<byte[], Exception> InternalSerialize<T>(T record)
+        private Result<ReadOnlyMemory<byte>, Exception> InternalSerialize<T>(T record)
             where T : IRecordMarker
         {
             try
@@ -77,15 +77,15 @@ namespace CryptoShark.Utilities
                 serializer.Serialize(bsonDataWriter, record, record.GetType());
 
                 if(stream.Length <=0)
-                    return Result.Failure<byte[], Exception>(new SerializationException("Could not serialize data"));
+                    return Result.Failure<ReadOnlyMemory<byte>, Exception>(new SerializationException("Could not serialize data"));
 
-                return stream.ToArray();
+                return new ReadOnlyMemory<byte>(stream.ToArray());
 
             }
             catch (Exception ex) 
             {
                 logger?.LogError(ex, "CryptoShark:RecordSerializer {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 

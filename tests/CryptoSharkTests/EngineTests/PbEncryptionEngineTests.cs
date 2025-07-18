@@ -16,7 +16,7 @@ namespace CryptoSharkTests.EngineTests
     {
         private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
 
-        private byte[] _sampleData;
+        private ReadOnlyMemory<byte> _sampleData;
         private CryptoSharkUtilities _cryptoSharkUtilities;
         private Mock<ILogger> _mockLogger;
         private SecureString _password;
@@ -57,7 +57,7 @@ namespace CryptoSharkTests.EngineTests
                 encrypted.Value.Iterations);
 
             Assert.That(encrypted.IsSuccess, Is.True);
-            Assert.That(decrypted.Value.SequenceEqual(_sampleData), Is.True);
+            Assert.That(decrypted.Value.Span.SequenceEqual(_sampleData.Span), Is.True);
         }
 
         private static Array GetEncryptionAlgorithms()

@@ -14,7 +14,7 @@ public class CryptoSharkEccCryptographyTests
 {
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
     private readonly string _password = "Abc123";
-    private readonly byte[] _sampleData = new byte[7514];
+    private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514].AsMemory();
 
     [SetUp]
     public void Setup()
@@ -52,7 +52,7 @@ public class CryptoSharkEccCryptographyTests
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData, 
+        var request = AsymetricEncryptionRequest.CreateRequest(publicKey, privateKey, _sampleData, 
             _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);

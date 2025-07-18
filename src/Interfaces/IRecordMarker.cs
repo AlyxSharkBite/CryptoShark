@@ -32,18 +32,18 @@ namespace CryptoShark.Interfaces
         /// <summary>
         ///     HMAC Hash of the Unencrypted Data        
         /// </summary>        
-        public byte[] Hash { get; init; }
+        public byte[] Hash { get; }
 
         /// <summary>
         ///     Salt used in the PBKDF2 Key Derivation
         /// </summary>        
-        public byte[] Salt { get; init; }
+        public byte[] Salt { get; }
 
         /// <summary>
         ///     Number of iterations used in the
         ///     PBKDF2 Password Derivation 
         /// </summary>        
-        public int Iterations { get; init; }
+        public int Iterations { get; }
     }
 
     public interface IAsemetricRecordMarker : IRecordMarker
@@ -51,11 +51,11 @@ namespace CryptoShark.Interfaces
         /// <summary>
         ///     Public Key for Derivation and Signature Verification
         /// </summary>        
-        public byte[] PublicKey { get; init; }
+        public byte[] PublicKey { get; }
 
         /// <summary>
         ///     Signature of the Decrypted Data
         /// </summary>        
-        public byte[] Signature { get; init; }
+        public byte[] Signature { get; }
     }
 }

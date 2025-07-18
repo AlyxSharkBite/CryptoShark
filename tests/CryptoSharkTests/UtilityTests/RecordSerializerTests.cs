@@ -87,10 +87,10 @@ namespace CryptoSharkTests.UtilityTests
             return new EccCryptographyRecord
             {
                 EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
-                PublicKey = GenerateBytes(256),
-                Signature = GenerateBytes(128),
-                EncryptedData = GenerateBytes(4096),
-                Nonce = GenerateBytes(16)
+                PublicKey = GenerateBytes(256).ToArray(),
+                Signature = GenerateBytes(128).ToArray(),
+                EncryptedData = GenerateBytes(4096).ToArray(),
+                Nonce = GenerateBytes(16).ToArray()
             };
         }
 
@@ -99,11 +99,11 @@ namespace CryptoSharkTests.UtilityTests
             return new PbeCryptographyRecord
             {
                 EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
-                EncryptedData = GenerateBytes(4096),
-                Nonce = GenerateBytes(16),
-                Hash = GenerateBytes(96),
+                EncryptedData = GenerateBytes(4096).ToArray(),
+                Nonce = GenerateBytes(16).ToArray(),
+                Hash = GenerateBytes(96).ToArray(),
                 Iterations = 500,
-                Salt = GenerateBytes(16)
+                Salt = GenerateBytes(16).ToArray()
             };
         }
 
@@ -112,15 +112,15 @@ namespace CryptoSharkTests.UtilityTests
             return new RsaCryptographyRecord
             {
                 EncryptionAlgorithm = CryptoShark.Enums.EncryptionAlgorithm.Aes,
-                EncryptedData = GenerateBytes(4096),
-                EncryptionKey = GenerateBytes(112),
-                PublicKey = GenerateBytes(248),
-                Signature = GenerateBytes(96),
-                Nonce = GenerateBytes(16)
+                EncryptedData = GenerateBytes(4096).ToArray(),
+                EncryptionKey = GenerateBytes(112).ToArray(),
+                PublicKey = GenerateBytes(248).ToArray(),
+                Signature = GenerateBytes(96).ToArray(),
+                Nonce = GenerateBytes(16).ToArray()
             };
         }
 
-        private static byte[] GenerateBytes(int size)
+        private static ReadOnlyMemory<byte> GenerateBytes(int size)
         {
             var salt = new byte[size];
             using RandomNumberGenerator randomNumberGenerator = RandomNumberGenerator.Create();

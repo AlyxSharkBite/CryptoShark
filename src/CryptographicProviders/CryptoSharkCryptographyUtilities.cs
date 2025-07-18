@@ -29,12 +29,12 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
+        public ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
         {
             if (parameters is null) 
                 throw new ArgumentNullException(nameof(parameters));    
 
-            Result<byte[], Exception> keyResult;
+            Result<ReadOnlyMemory<byte>, Exception> keyResult;
 
             if (parameters.GetType() == typeof(EccKeyParameters)) 
             { 
@@ -49,27 +49,27 @@ namespace CryptoShark.CryptographicProviders
             else
             {
                 _logger?.LogError("CryptoShark:CryptoSharkCryptographyUtilities:CreateAsymetricKey {message}", $"Unknown Type {parameters.GetType().Name}");
-                keyResult = Result.Failure<byte[], Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
+                keyResult = Result.Failure<ReadOnlyMemory<byte>, Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
             }
 
             if(keyResult.IsFailure)
                 throw new CryptographicException("CreateAsymetricKey Failed, see inner exception(s)", keyResult.Error);
 
-            return keyResult.Value.AsSpan();
+            return keyResult.Value;
         }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
+        public ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, hashAlgorithm);
             if (hashResult.IsFailure)
                 throw new CryptographicException("Hash Failed, see inner exception(s)", hashResult.Error);
 
-            return hashResult.Value.AsSpan();
+            return hashResult.Value;
         }
 
         /// <inheritdoc />
-        public string HashBytes(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm, StringEncoding encoding)
+        public string HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm, StringEncoding encoding)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, encoding, hashAlgorithm);
             if (hashResult.IsFailure)
@@ -80,7 +80,7 @@ namespace CryptoShark.CryptographicProviders
 
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, 
+        public ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, 
             CryptographyType cryptographyType)
         {
             switch (cryptographyType)
@@ -90,14 +90,14 @@ namespace CryptoShark.CryptographicProviders
                         var result = _cryptoSharkUtilities.GetEccPublicKey(privateKey, password);
                         if (result.IsFailure)
                             throw new CryptographicException("Failed to get public key, see inner exception(s)", result.Error);
-                        return result.Value.AsSpan();
+                        return result.Value;
                     } 
                 case CryptographyType.RivestShamirAdlemanCryptography:
                     {
                         var result = _cryptoSharkUtilities.GetRsaPublicKey(privateKey, password);
                         if (result.IsFailure)
                             throw new CryptographicException("Failed to get public key, see inner exception(s)", result.Error);
-                        return result.Value.AsSpan();
+                        return result.Value;
                     }
                 default:
                     throw new ArgumentException($"Invalid CryptographyType {cryptographyType}");

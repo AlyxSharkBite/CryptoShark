@@ -13,7 +13,7 @@ namespace CryptoShark.Interfaces
         /// <summary>
         /// Data To Encrypt
         /// </summary>
-        byte[] ClearData { get; }
+        ReadOnlyMemory<byte> ClearData { get; }
 
         /// <summary>
         /// Password
@@ -36,13 +36,13 @@ namespace CryptoShark.Interfaces
         /// <summary>
         /// Public Key
         /// </summary>
-        byte[] PublicKey { get; }
+        ReadOnlyMemory<byte> PublicKey { get; }
 
 
         /// <summary>
         /// Private Key
         /// </summary>
-        byte[] PrivateKey { get; }
+        ReadOnlyMemory<byte> PrivateKey { get; }
 
         /// <summary>
         /// Padding (RSA Only) 
