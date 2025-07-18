@@ -37,6 +37,20 @@ namespace CryptoShark.Enums
         /// ------------------+----------------------
         /// 156 AES           | Future-proofing
         /// </summary>
-        KeySize4096 = 4096
+        KeySize4096 = 4096,
+
+        /// <summary>
+        /// SECURITY STRENGTH | RECOMMENDED USE UNTIL
+        /// ------------------+----------------------
+        /// 192 AES           | Future-proofing
+        /// </summary>
+        KeySize8192 = 7680,
+
+        /// <summary>
+        /// SECURITY STRENGTH | RECOMMENDED USE UNTIL
+        /// ------------------+----------------------
+        /// 256 AES           | Future-proofing
+        /// </summary>
+        KeySizw15360 = 15360
     }
 }
