@@ -9,7 +9,7 @@ namespace CryptoShark.Enums
     /// <summary>
     /// RSA Key Sizes
     /// </summary>
-    public enum RsaKeySize
+    public enum RsaKeySize : short
     {
         /// <summary>
         /// SECURITY STRENGTH | RECOMMENDED USE UNTIL
@@ -44,7 +44,7 @@ namespace CryptoShark.Enums
         /// ------------------+----------------------
         /// 192 AES           | Future-proofing
         /// </summary>
-        KeySize8192 = 7680,
+        KeySize7680 = 7680,
 
         /// <summary>
         /// SECURITY STRENGTH | RECOMMENDED USE UNTIL

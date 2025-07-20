@@ -1,21 +1,29 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using CryptoShark.Enums;
+﻿using CryptoShark.Enums;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Utilities;
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace CryptoShark.Engine
 {
     internal sealed class EncryptionEngine
     {               
         private readonly EncryptionAlgorithm _encryptionAlgorithm;
+        private readonly ZLibCompressionOptions _zlibCompressionOptions;
 
         public EncryptionEngine(EncryptionAlgorithm encryptionAlgorithm)
         {            
             _encryptionAlgorithm = encryptionAlgorithm;
+            _zlibCompressionOptions = new ZLibCompressionOptions
+            {
+                CompressionStrategy = ZLibCompressionStrategy.HuffmanOnly
+            };
         }
 
         /// <summary>
@@ -24,11 +32,16 @@ namespace CryptoShark.Engine
         /// <param name="data">Data to Encrypt</param>
         /// <param name="key">Encryotion Key</param>
         /// <param name="nonce">Nonce Token</param>
+        /// <param name="compress">Compress data before encryption Token</param>
         /// <returns></returns>
-        public ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce)
+        public ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce, bool compress)
         {
             // Create the Encryption Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
+
+            // Compress
+            if (compress)
+                data = Compress(data);
 
             // Create the Cipher from the Engine
             var cipher = new GcmBlockCipher(engine);
@@ -95,7 +108,36 @@ namespace CryptoShark.Engine
             // Process final block
             cipher.DoFinal(decryptedData, res);
 
+            // Deompress if needed
+            if (decryptedData[0] == 0x78 && decryptedData[1] == 0x01)
+                decryptedData = Decompress(decryptedData);
+
             return decryptedData;
+        }
+
+        private byte[] Decompress(byte[] data)
+        {
+            using (var memoryStream = new MemoryStream(data))
+            {
+                using (var outputStream = new MemoryStream())
+                {
+                    using (var decompressStream = new ZLibStream(memoryStream, CompressionMode.Decompress))
+                        decompressStream.CopyTo(outputStream);
+
+                    return outputStream.ToArray();
+                }
+            }
+        }
+
+        private ReadOnlyMemory<byte> Compress(ReadOnlyMemory<byte> data)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var zlibStream = new ZLibStream(memoryStream, _zlibCompressionOptions))                
+                    zlibStream.Write(data.ToArray(), 0, data.Length);
+                
+                return memoryStream.ToArray();
+            }
         }
 
         private IBlockCipher GetBlockEngine(EncryptionAlgorithm algorithmName)

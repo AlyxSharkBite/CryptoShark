@@ -25,6 +25,15 @@ namespace CryptoShark.Interfaces
         ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);
 
         /// <summary>
+        /// Hashes Binary Data with default Hash Alorithm
+        /// (If not specified in ICryptoSharkConfiguration
+        /// will use SHA-256)
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data);
+
+        /// <summary>
         /// Hashes Binary Data
         /// </summary>
         /// <param name="data"></param>
@@ -33,6 +42,16 @@ namespace CryptoShark.Interfaces
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
         string HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);
+
+        /// <summary>
+        /// Hashes Binary Data with default Hash Alorithm
+        /// (If not specified in ICryptoSharkConfiguration
+        /// will use SHA-256) 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        string HashBytes(ReadOnlyMemory<byte> data, Enums.StringEncoding encoding);
 
         /// <summary>
         /// Creates an Asymetric Private Key

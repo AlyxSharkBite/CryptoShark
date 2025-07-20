@@ -26,12 +26,15 @@
 * Updated RSA Keys to use Encrypted PEM format same as ECC Keys
 * Replaced all .Net Rsa Cryptography Next Generation (CNG) with BouncyCastle code
 
-**Version 3.2.1**
-* Internal code updates to mke future enhaemnts easier
+**Version 3.5.0**
+* Added ability to default many options via ICryptoSharkConfiguration
+* Internal code updates to make future enhaemnts easier
 * Exposed all the internal parts allowing supplying the desired options
     * Hash Alorythm for verifying data integrity can now be chosen
-    * RSA Padding for RSA Encryption can now be set with stanard string 
+    * RSA Padding for RSA Encryption can now be set with stanard strings 
         * Example: 'OAEPWithSHA-256AndMGF1Padding'
+ * Performance Enhancements
+ * Added option to compress data before encryption useing [Huffman Coding](https://en.wikipedia.org/wiki/Huffman_coding)
 
 ## About
 Code written on macOS & Windows 11

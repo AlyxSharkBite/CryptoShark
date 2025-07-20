@@ -1,8 +1,10 @@
 ﻿using CryptoShark.CryptographicProviders;
+using CryptoShark.Enums;
 using CryptoShark.Options;
 using CryptoShark.Requests;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Org.BouncyCastle.Security;
 using System.Security.Cryptography;
 
 namespace CryptoSharkTests;
@@ -11,11 +13,16 @@ public class CryptoSharkRsaCryptographyTests
 {
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
     private readonly string _password = "Abc123";
-    private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514];
+    private  ReadOnlyMemory<byte> _sampleData;
+    private static RsaHelper _rsaHelper = new RsaHelper();
 
     [SetUp]
     public void Setup()
     {
+        SecureRandom random = new SecureRandom();
+        byte[] sample = new byte[1024 * 10]; // 10Mb
+        random.NextBytes(sample);
+        _sampleData = sample.AsMemory();        
     }
 
     [Test]
@@ -34,19 +41,16 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(provider, Is.Not.Null);
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void EncryptionSuccessTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void EncryptionSuccessTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize2048);
-
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
+        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
@@ -56,19 +60,16 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(encrypted.IsEmpty, Is.False);
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void EncryptionFailNullParamsTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void EncryptionFailNullParamsTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize2048);
-
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
+        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = default(AsymetricEncryptionRequest);
@@ -77,17 +78,16 @@ public class CryptoSharkRsaCryptographyTests
 
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void EncryptionFailInvalidParamsTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void EncryptionFailInvalidParamsTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(new byte[256]);
+        Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);        
+        var publicKey = new ReadOnlyMemory<byte>(new byte[256]);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
@@ -97,19 +97,16 @@ public class CryptoSharkRsaCryptographyTests
 
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void DecryptionSuccessTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void DecryptionSuccessTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize2048);
-
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
+        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
@@ -122,44 +119,36 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(decrypted.IsEmpty, Is.False);
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void DecryptionFailNullParamTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void DecryptionFailNullParamTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize2048);
-
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
+        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);        
 
-        var privateKeyArray = privateKey.ToArray();
-
-        Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, privateKeyArray,
+        Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, privateKey,
             utilities.StringToSecureString(_password)));
 
     }
 
-    [TestCaseSource(nameof(CreateLoggers))]
-    public void DecryptionFailInvalidParamTests(ILogger logger)
+    [TestCaseSource(nameof(GetTestData))]
+    public void DecryptionFailInvalidParamTests(RsaTestData rsaTestData)
     {
-        var utilities = CryptoSharkCryptographyUtilities.Create(logger);
-        var provider = CryptoSharkRsaCryptography.Create(logger);
+        var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
+        var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize2048);
-
-        var privateKey = utilities.CreateAsymetricKey(keyParams);
+        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
-            CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
+        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
@@ -177,6 +166,34 @@ public class CryptoSharkRsaCryptographyTests
 
     private static Array CreateLoggers()
     {
-        return new[] { _mockLogger.Object, null };
+        return new[] { _mockLogger.Object, null };        
+    }
+
+    private static Array GetRsaKeySizes()
+    {
+        return Enum.GetValues(typeof(CryptoShark.Enums.RsaKeySize));
+    }
+
+    private static IEnumerable<RsaTestData> GetTestData() 
+    { 
+        List<RsaTestData> rsaTestData = new List<RsaTestData>();
+
+        foreach(var keyData in _rsaHelper.RsaKeyData) 
+        {
+            rsaTestData.Add(new RsaTestData
+            {
+                RsaKeyData = keyData,
+                Logger = null
+            });
+
+            rsaTestData.Add(new RsaTestData
+            {
+                RsaKeyData = keyData,
+                Logger = _mockLogger.Object
+            });
+        }
+
+        return rsaTestData;
+
     }
 }

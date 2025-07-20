@@ -11,21 +11,25 @@ namespace CryptoShark.Requests
 {
     public class SemetricEncryptionRequest : IEncryptionRequest
     {
-        private SemetricEncryptionRequest(ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm encryptionAlgorithm,
-            CryptoShark.Enums.HashAlgorithm hashAlgorithm)
+        private SemetricEncryptionRequest(
+            ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm? encryptionAlgorithm,
+            HashAlgorithm? hashAlgorithm, bool? compress)
         {
             ClearData = clearData;
             Password = password;
             EncryptionAlgorithm = encryptionAlgorithm;
             HashAlgorithm = hashAlgorithm;
+            CompressData = compress;
         }
 
-        private SemetricEncryptionRequest(ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm encryptionAlgorithm,
-            CryptoShark.Enums.HashAlgorithm hashAlgorithm)
+        private SemetricEncryptionRequest(
+            ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm? encryptionAlgorithm,
+            HashAlgorithm? hashAlgorithm, bool? compress)
         {
             ClearData = clearData;            
             EncryptionAlgorithm = encryptionAlgorithm;
             HashAlgorithm = hashAlgorithm;
+            CompressData = compress;
 
             Password = new SecureString();
             foreach (var c in password.ToCharArray())
@@ -41,15 +45,18 @@ namespace CryptoShark.Requests
         public SecureString Password { get; private set; }
 
         /// <inheritdoc />
-        public EncryptionAlgorithm EncryptionAlgorithm { get; private set; }
+        public EncryptionAlgorithm? EncryptionAlgorithm { get; private set; }
 
         /// <inheritdoc />
-        public HashAlgorithm HashAlgorithm { get; private set; }
+        public HashAlgorithm? HashAlgorithm { get; private set; }
+
+        /// <inheritdoc />
+        public bool? CompressData { get; private set; }
+
+        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, bool? compress = null) 
+            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm, compress);
         
-        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm encryptionAlgorithm, CryptoShark.Enums.HashAlgorithm hashAlgorithm) 
-            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm);
-        
-        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm encryptionAlgorithm, CryptoShark.Enums.HashAlgorithm hashAlgorithm)
-            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm);
+        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, bool? compress = null)
+            => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm, compress);
     }
 }

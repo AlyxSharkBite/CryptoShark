@@ -2,6 +2,7 @@
 using CryptoShark.Utilities;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,19 +16,23 @@ namespace CryptoSharkTests.UtilityTests
 {
     public class CryptoSharkUtilitiesTests
     {
-        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
+        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();      
+        private static RsaHelper _rsaHelper = new RsaHelper();
 
         private ReadOnlyMemory<byte> _sampleData;        
         private Mock<ILogger> _mockLogger;
-        private SecureString _password;
-        private static readonly object _lock = new object();
-
+        private SecureString _password;       
+        private SecureRandom _random;
+        
         [SetUp]
         public void Setup()
         {
-            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);            
-            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");
-            _password = StringToSecureString("Abc123");
+            byte[] sample = new byte[1024 * 10]; // 10Mb
+            _random = new SecureRandom();
+            _random.NextBytes(sample);
+            _sampleData = sample.ToArray();
+            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);                        
+            _password = StringToSecureString("Abc123");            
         }
 
         [TearDown]
@@ -59,11 +64,21 @@ namespace CryptoSharkTests.UtilityTests
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
-        public void CreateRsaPrivateKeyTests(RsaKeySize rsaKeySize)
+        public void CreateRsaPrivateKeyTestsBouncyCastle(RsaKeySize rsaKeySize)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password);
+            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, false);
+            Assert.That(keyResult.IsSuccess, Is.True);
+            Assert.That(keyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetRsaKeySizes))]
+        public void CreateRsaPrivateKeyTestsDotNet(RsaKeySize rsaKeySize)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, true);
             Assert.That(keyResult.IsSuccess, Is.True);
             Assert.That(keyResult.Value.IsEmpty, Is.False);
         }
@@ -73,7 +88,10 @@ namespace CryptoSharkTests.UtilityTests
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKey = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password).Value;
+            var privateKey = new ReadOnlyMemory<byte>(_rsaHelper
+                    .RsaKeyData
+                    .First(x=>x.RsaKeySize == rsaKeySize)
+                .RsaPrivateKey);                
 
             var publicKeyResult = cryptoSharkUtilities.GetRsaPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
@@ -153,13 +171,14 @@ namespace CryptoSharkTests.UtilityTests
         private static ReadOnlyMemory<byte> GetKey()
         {
             ReadOnlyMemory<byte> key = null;
-            lock (_lock)
+
+            using (var aesCng = AesCng.Create())
             {
-                using var aesCng = AesCng.Create();
                 aesCng.KeySize = 256;
                 aesCng.GenerateKey();
                 key = aesCng.Key;
             }
+            
             return key;
         }
 

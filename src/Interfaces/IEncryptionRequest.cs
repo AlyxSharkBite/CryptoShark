@@ -22,13 +22,24 @@ namespace CryptoShark.Interfaces
 
         /// <summary>
         ///     Encryption Algorithm To Use
+        /// If null will default to ICryptoSharkConfiguration
+        /// or TwoFish if that is not specified
         /// </summary>
-        EncryptionAlgorithm EncryptionAlgorithm { get; }
+        EncryptionAlgorithm? EncryptionAlgorithm { get; }
 
         /// <summary>
         ///     Hash Algorithm To Use
+        /// If null will default to ICryptoSharkConfiguration
+        /// or SHA-256 if that is not specified
         /// </summary>
-        HashAlgorithm HashAlgorithm { get; }        
+        HashAlgorithm? HashAlgorithm { get; }
+
+        /// <summary>
+        /// Compress data before encryption
+        /// If null will default to ICryptoSharkConfiguration
+        /// or FALSE if that is not specified
+        /// </summary>
+        bool? CompressData { get; }
     }
 
     public interface IAsymetricEncryptionRequest : IEncryptionRequest
@@ -46,7 +57,8 @@ namespace CryptoShark.Interfaces
 
         /// <summary>
         /// Padding (RSA Only) 
-        /// Default: OAEPWithSHA-256AndMGF1Padding
+        /// Defaults to ICryptoSharkConfiguration
+        /// or OAEPWithSHA-256AndMGF1Padding
         /// </summary>
         string RsaPadding { get; }
     }

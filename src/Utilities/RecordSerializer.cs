@@ -1,15 +1,9 @@
 ﻿using CryptoShark.Interfaces;
 using CSharpFunctionalExtensions;
+using MessagePack;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CryptoShark.Utilities
 {
@@ -69,18 +63,8 @@ namespace CryptoShark.Utilities
         {
             try
             {
-                using MemoryStream stream = new MemoryStream();
-                using BinaryWriter writer = new BinaryWriter(stream);
-                using BsonDataWriter bsonDataWriter = new BsonDataWriter(writer);
-                JsonSerializer serializer = new JsonSerializer();
-
-                serializer.Serialize(bsonDataWriter, record, record.GetType());
-
-                if(stream.Length <=0)
-                    return Result.Failure<ReadOnlyMemory<byte>, Exception>(new SerializationException("Could not serialize data"));
-
-                return new ReadOnlyMemory<byte>(stream.ToArray());
-
+                return Result.Success<ReadOnlyMemory<byte>, Exception>(
+                     MessagePackSerializer.Serialize<T>(record).AsMemory());     
             }
             catch (Exception ex) 
             {
@@ -94,17 +78,7 @@ namespace CryptoShark.Utilities
         {
             try
             {
-                using MemoryStream inputStream = new MemoryStream(data.ToArray());
-                using BinaryReader reader = new BinaryReader(inputStream);
-                using BsonDataReader bsonDataReader = new BsonDataReader(reader);
-
-                JsonSerializer serializer = new JsonSerializer();
-                var record = serializer.Deserialize<T>(bsonDataReader);
-
-                if(record is null)
-                    return Result.Failure<T, Exception>(new SerializationException("Could not eeserialize data"));
-
-                return record;
+                return Result.Success<T, Exception>(MessagePackSerializer.Deserialize<T>(data));
             }
             catch (Exception ex)
             {

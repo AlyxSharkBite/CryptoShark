@@ -23,7 +23,7 @@ namespace CryptoShark
     internal sealed class PBEncryption
     {
         private const int KEY_SIZE = 256;
-        private readonly ILogger _logger;
+        private readonly ILogger _logger;       
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
         private readonly SecureRandom _secureRandom;
@@ -34,22 +34,18 @@ namespace CryptoShark
         /// <param name="logger"></param>
         public PBEncryption(ILogger logger)
         {
-            _logger = logger;
+            _logger = logger;            
             _secureStringUtilities = new SecureStringUtilities();
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
-            _secureRandom = new SecureRandom();
+            _secureRandom = new SecureRandom();            
         }
-
-        /// <summary>
-        ///     Encrypts the specified data with specified algorithm        
-        /// </summary>
-        /// <param name="clearData">Data to Encrypt</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm to use</param> 
-        /// <param name="hashAlgorithm">Hashing Algorithm to use</param> 
-        /// <param name="password">Password for encryption</param>        
-        /// <returns>Encryption Results</returns>
-        public Result<PbeCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, EncryptionAlgorithm encryptionAlgorithm,
-            CryptoShark.Enums.HashAlgorithm hashAlgorithm, SecureString password)
+        
+        public Result<PbeCryptographyRecord, Exception> Encrypt(
+            ReadOnlyMemory<byte> clearData,
+            EncryptionAlgorithm encryptionAlgorithm,
+            Enums.HashAlgorithm hashAlgorithm,
+            SecureString password,
+            bool? compress)
         {
             try
             {
@@ -75,7 +71,7 @@ namespace CryptoShark
                     return Result.Failure<PbeCryptographyRecord, Exception>(hashResult.Error);
 
                 // Encrypt
-                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value);
+                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value, compress ?? false);
 
                 return new PbeCryptographyRecord
                 {

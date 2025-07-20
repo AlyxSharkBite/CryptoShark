@@ -1,75 +1,61 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.Ocsp;
+﻿using CryptoShark.Interfaces;
+using MessagePack;
+using MessagePack.Resolvers;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Pqc.Crypto.Lms;
+using Org.BouncyCastle.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CryptoShark.Utilities
 {
-    public sealed class ECDsaSignature
+    [MessagePackObject(true)]
+    public class ECDsaSignature 
     {
-        [JsonExtensionData]
-        private IDictionary<string, JToken> _additionalData;
+        [Key(0)]
+        public byte[] _r {  get; set; }
 
-        [JsonIgnore]
-        public BigInteger r { get; private set; }
+        [Key(1)]
+        public byte[] _s { get; set; }
 
-        [JsonIgnore]
-        public BigInteger s { get; private set; }
+        [IgnoreMember]
+        public BigInteger r => new BigInteger(_r);
 
-        public ECDsaSignature()
-        {
-            _additionalData = new Dictionary<string, JToken>();
+        [IgnoreMember]
+        public BigInteger s => new BigInteger(_s);     
+
+        public ECDsaSignature()         
+        { 
+            _r = BigInteger.Zero.ToByteArray();
+            _s = BigInteger.Zero.ToByteArray();
         }
 
         public ECDsaSignature(BigInteger r, BigInteger s)
         {
-            this.r = r;
-            this.s = s;
-            _additionalData = new Dictionary<string, JToken>();
+            this._r = r.ToByteArray();
+            this._s = s.ToByteArray();           
+        }
+
+        public ECDsaSignature(byte[] r, byte[] s)
+        {
+            this._r = r;
+            this._s = s;
         }
 
         public ReadOnlyMemory<byte> ToArray()
+        {      
+            var data = MessagePackSerializer.Serialize<ECDsaSignature>(this, 
+                StandardResolverAllowPrivate.Options);           
+
+            return new ReadOnlyMemory<byte>(data);
+        }        
+
+        public static ECDsaSignature FromByteArray(ReadOnlyMemory<byte> data) 
         {
-            using MemoryStream bsonstream = new MemoryStream();
-            using BinaryWriter binWriter = new BinaryWriter(bsonstream);
-            using BsonDataWriter bsonDataWriter = new BsonDataWriter(binWriter);
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Serialize(bsonDataWriter, this, typeof(ECDsaSignature));
-
-            return bsonstream.ToArray();
-        }
-
-        public static ECDsaSignature FromByteArray(ReadOnlyMemory<byte> data)
-        {
-            using MemoryStream bsonStream = new MemoryStream(data.ToArray());
-            using BinaryReader binReader = new BinaryReader(bsonStream);
-            using BsonDataReader bsonDataReader = new BsonDataReader(binReader);
-            JsonSerializer serializer = new JsonSerializer();
-
-            return serializer.Deserialize<ECDsaSignature>(bsonDataReader);
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            r = new BigInteger((string)_additionalData["rVal"]);
-            s = new BigInteger((string)_additionalData["sVal"]);
-        }
-
-        [OnSerializing]
-        private void OnOnSerializing(StreamingContext context)
-        {
-            _additionalData["rVal"] = r.ToString();
-            _additionalData["sVal"] = s.ToString();
+            return MessagePackSerializer.Deserialize<ECDsaSignature>(
+                data, 
+                StandardResolverAllowPrivate.Options);
         }
     }
 }

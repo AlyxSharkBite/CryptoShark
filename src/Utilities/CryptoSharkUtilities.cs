@@ -21,11 +21,10 @@ using System.Text;
 namespace CryptoShark.Utilities
 {    
     internal sealed class CryptoSharkUtilities(ILogger logger)
-    {   
-        private static readonly object _lock = new object();      
+    {        
         private readonly SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
-
+        private readonly ILogger _logger = logger;
 
         public Result<ReadOnlyMemory<byte>, Exception> CreateEccKey(ECCurve curve, SecureString password)
         { 
@@ -33,17 +32,12 @@ namespace CryptoShark.Utilities
             {
                 curve.Validate();
 
-                lock (_lock)
-                {
-                    var domainParameters = _asymmetricCipherUtilities.EcGetBuiltInDomainParameters(curve);
-                    var keyPair = _asymmetricCipherUtilities.GenerateECDHKeyPair(domainParameters);
-
-                    return _asymmetricCipherUtilities.WriteKeyPair(keyPair, password);
-                }
+                var keyPair = _asymmetricCipherUtilities.GenerateECDHKeyPair(curve);
+                return _asymmetricCipherUtilities.WritePrivateKey(keyPair.Private, password);
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateEccKey {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateEccKey {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }            
         }
@@ -52,32 +46,31 @@ namespace CryptoShark.Utilities
         {
             try
             {
-                lock (_lock)
-                {
-                    var keyPair = _asymmetricCipherUtilities.ReadKeyPair(encryptedEccKey.ToArray(), password);
-                    return _asymmetricCipherUtilities.WritePublicKey(keyPair.Public);
-                }
+                var privateKey = _asymmetricCipherUtilities.ReadPrivateKey(encryptedEccKey.ToArray(), password);
+                var publicKey = _asymmetricCipherUtilities.GetPublicKey(privateKey);
+                return _asymmetricCipherUtilities.WritePublicKey(publicKey);
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetEccPublicKey {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetEccPublicKey {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> CreateRsaKey(RsaKeySize keySize, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> CreateRsaKey(RsaKeySize keySize, 
+            SecureString password, bool useDotNet)
         {
             try
             {
-                lock (_lock)
-                {
-                    var keyPair = _asymmetricCipherUtilities.GenerateRsaKeyPair((int)keySize);
-                    return _asymmetricCipherUtilities.WriteKeyPair(keyPair, password);
-                }
+                var keyPair = _asymmetricCipherUtilities.GenerateRsaKeyPair(
+                    (int)keySize,
+                    useDotNet);                
+                
+                return _asymmetricCipherUtilities.WritePrivateKey(keyPair.Private, password);
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateRsaKey {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateRsaKey {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
@@ -86,20 +79,19 @@ namespace CryptoShark.Utilities
         {           
             try
             {
-                lock (_lock)
-                {
-                    var keyPair = _asymmetricCipherUtilities.ReadKeyPair(encryptedRsaKey.ToArray(), password);
-                    return _asymmetricCipherUtilities.WritePublicKey(keyPair.Public);
-                }
+                var privateKey = _asymmetricCipherUtilities.ReadPrivateKey(encryptedRsaKey.ToArray(), password);
+                var publicKey = _asymmetricCipherUtilities.GetPublicKey(privateKey);
+                return _asymmetricCipherUtilities.WritePublicKey(publicKey);
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetRsaPublicKey {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetRsaPublicKey {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<string, Exception> Hash(ReadOnlyMemory<byte> data, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
+        public Result<string, Exception> Hash(ReadOnlyMemory<byte> data, Enums.StringEncoding encoding, 
+            Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
@@ -108,12 +100,13 @@ namespace CryptoShark.Utilities
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
                 return Result.Failure<string, Exception>(ex);
             }
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> Hash(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
+        public Result<ReadOnlyMemory<byte>, Exception> Hash(ReadOnlyMemory<byte> data, 
+            Enums.HashAlgorithm hashAlgorithm)
         {
             try 
             {
@@ -122,12 +115,13 @@ namespace CryptoShark.Utilities
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
         
-        public Result<ReadOnlyMemory<byte>, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, Enums.HashAlgorithm hashAlgorithm)
+        public Result<ReadOnlyMemory<byte>, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, 
+            Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
@@ -136,12 +130,13 @@ namespace CryptoShark.Utilities
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
                 return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        public Result<string, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
+        public Result<string, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, 
+            Enums.StringEncoding encoding, Enums.HashAlgorithm hashAlgorithm)
         {
             try
             {
@@ -150,9 +145,27 @@ namespace CryptoShark.Utilities
             }
             catch (Exception ex)
             {
-                logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
+                _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
                 return Result.Failure<string, Exception>(ex);
             }
         }
+
+        public Result<ECCurve> ParseCurveFomOid(string oidString)
+        {
+            try
+            {
+                return ECCurve.CreateFromOid(
+                    Oid.FromOidValue(
+                        oidString, 
+                        OidGroup.All)
+                    );
+            }
+            catch (Exception ex) 
+            {
+                _logger?.LogError(ex, "Unable to parse Oid {oidString}", oidString);
+                return Result.Failure<ECCurve>(ex.Message);
+            }
+        }
+
 	}
 }

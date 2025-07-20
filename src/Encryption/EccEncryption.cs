@@ -5,25 +5,15 @@ using CryptoShark.Record;
 using CryptoShark.Utilities;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
-using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Security;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 [assembly: InternalsVisibleTo("CryptoSharkTests")]
 namespace CryptoShark
@@ -38,7 +28,7 @@ namespace CryptoShark
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities;
-        private readonly SecureRandom _secureRandom;
+        private readonly SecureRandom _secureRandom;        
 
         /// <summary>
         /// Constructor
@@ -46,16 +36,21 @@ namespace CryptoShark
         /// <param name="logger">ILogger</param>
         public EccEncryption(ILogger logger)
         {
-            _logger = logger;
+            _logger = logger;           
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
             _secureStringUtilities = new SecureStringUtilities();
             _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
             _secureRandom = new SecureRandom();
         }
        
-        public Result<EccCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, ReadOnlyMemory<byte> eccPublicKey,
-            ReadOnlyMemory<byte> eccPrivateKey, EncryptionAlgorithm encryptionAlgorithm, Enums.HashAlgorithm hashAlgorithm,
-            SecureString password)
+        public Result<EccCryptographyRecord, Exception> Encrypt(
+            ReadOnlyMemory<byte> clearData,
+            ReadOnlyMemory<byte> eccPublicKey,
+            ReadOnlyMemory<byte> eccPrivateKey,
+            EncryptionAlgorithm encryptionAlgorithm,
+            Enums.HashAlgorithm hashAlgorithm,
+            SecureString password,
+            bool? compress)
         {
             try
             {
@@ -80,7 +75,7 @@ namespace CryptoShark
                     return Result.Failure<EccCryptographyRecord, Exception>(signedHashResult.Error);
 
                 // Encrypt
-                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value);
+                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value, compress ?? false);
 
                 // Build the response
                 return new EccCryptographyRecord
@@ -157,7 +152,7 @@ namespace CryptoShark
             try
             {
                 var publicKey = _asymmetricCipherUtilities.ReadPublicKey(eccPublicKey.ToArray());
-                var dsaSignature = ECDsaSignature.FromByteArray(signature.ToArray());
+                var dsaSignature = ECDsaSignature.FromByteArray(signature);
 
                 var signer = new ECDsaSigner();
                 signer.Init(false, publicKey);
@@ -176,17 +171,18 @@ namespace CryptoShark
             return _cryptoSharkUtilities.Hash(data, hashAlgorithm);
         }
 
-        private Result<ReadOnlyMemory<byte>, Exception> SignHash(ReadOnlyMemory<byte> hash, ReadOnlyMemory<byte> eccPrivateKey, SecureString password)
+        private Result<ReadOnlyMemory<byte>, Exception> SignHash(ReadOnlyMemory<byte> hash, ReadOnlyMemory<byte> eccPrivateKey, 
+            SecureString password)
         {   
             try
             {
-                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(eccPrivateKey.ToArray(), password).Private;
+                var privateKey = _asymmetricCipherUtilities.ReadPrivateKey(eccPrivateKey.ToArray(), password);
 
                 var signer = new ECDsaSigner();
                 signer.Init(true, privateKey);
                 var signature = signer.GenerateSignature(hash.ToArray());
 
-                ECDsaSignature dsaSignature = new ECDsaSignature(signature[0], signature[1]);
+                var dsaSignature = new ECDsaSignature(signature[0], signature[1]);
 
                 return dsaSignature.ToArray();               
             }
@@ -220,7 +216,7 @@ namespace CryptoShark
             {
                 ReadOnlyMemory<byte> derivedKey = new byte[256 / 8];
 
-                var privateKey = _asymmetricCipherUtilities.ReadKeyPair(eccPrivateKey.ToArray(), password).Private;
+                var privateKey = _asymmetricCipherUtilities.ReadPrivateKey(eccPrivateKey.ToArray(), password);
                 var publicKey = _asymmetricCipherUtilities.ReadPublicKey(eccPublicKey.ToArray());
 
                 var exch = new Org.BouncyCastle.Crypto.Agreement.ECDHBasicAgreement();
