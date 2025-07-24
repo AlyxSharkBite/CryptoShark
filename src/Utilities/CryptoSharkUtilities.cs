@@ -26,13 +26,13 @@ namespace CryptoShark.Utilities
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
         private readonly ILogger _logger = logger;
 
-        public Result<ReadOnlyMemory<byte>, Exception> CreateEccKey(ECCurve curve, SecureString password)
+        public Result<ReadOnlyMemory<byte>, Exception> CreateEccKey(ECCurve curve, SecureString password, bool useDotNet)
         { 
             try
             {
                 curve.Validate();
 
-                var keyPair = _asymmetricCipherUtilities.GenerateECDHKeyPair(curve);
+                var keyPair = _asymmetricCipherUtilities.GenerateECDHKeyPair(curve, useDotNet);
                 return _asymmetricCipherUtilities.WritePrivateKey(keyPair.Private, password);
             }
             catch (Exception ex)

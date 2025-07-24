@@ -50,7 +50,7 @@ namespace CryptoShark.CryptographicProviders
                         curve = oidKeyResult.Value;
                 }
 
-                keyResult = _cryptoSharkUtilities.CreateEccKey(eccParams.Curve, eccParams.Password);
+                keyResult = _cryptoSharkUtilities.CreateEccKey(curve, eccParams.Password, _cryptoSharkConfiguration?.PreferDotNetKeyGeneration ?? false);
             }
             else if (parameters.GetType() == typeof(RsaKeyParameters))
             {
@@ -59,7 +59,7 @@ namespace CryptoShark.CryptographicProviders
                 keyResult = _cryptoSharkUtilities.CreateRsaKey(
                     keySize, 
                     rsaParams.Password,
-                    _cryptoSharkConfiguration?.PreferDotNetRsaKeyGeneration ?? false);
+                    _cryptoSharkConfiguration?.PreferDotNetKeyGeneration ?? false);
             }
             else
             {

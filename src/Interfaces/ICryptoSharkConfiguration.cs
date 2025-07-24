@@ -47,9 +47,9 @@ namespace CryptoShark.Interfaces
 
         /// <summary>
         /// If set TRUE will atempt to use the .NET Libraries
-        /// for RSA key generation if not possible will use the
+        /// for key generation if not possible will use the
         /// BouncyCastle libraries
         /// </summary>
-        bool? PreferDotNetRsaKeyGeneration { get; }
+        bool? PreferDotNetKeyGeneration { get; }
     }
 }

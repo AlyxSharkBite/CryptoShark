@@ -30,8 +30,20 @@ namespace CryptoShark.Utilities
         private readonly SecureRandom _random = new SecureRandom();
         private readonly SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();              
 
-        public AsymmetricCipherKeyPair GenerateECDHKeyPair(System.Security.Cryptography.ECCurve curve)
+        public AsymmetricCipherKeyPair GenerateECDHKeyPair(System.Security.Cryptography.ECCurve curve, bool useDotNey)
         {
+            if(useDotNey)
+            {
+                try
+                {
+                    return GenerateEccKeyPairDotNet(curve);
+                }
+                catch 
+                {
+                    // Fall Back to BouncyCastle in error
+                }
+            }
+
             ECDomainParameters ecDomainParameters = EcGetBuiltInDomainParameters(curve);
             ECKeyGenerationParameters ecKeyGenParams = new ECKeyGenerationParameters(ecDomainParameters, _random);
             ECKeyPairGenerator ecKeyPairGen = new ECKeyPairGenerator();
@@ -43,13 +55,20 @@ namespace CryptoShark.Utilities
         public AsymmetricCipherKeyPair GenerateRsaKeyPair(int keySize, bool useDotNey)
         {            
             if (useDotNey)
-            {                
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return GenerateRsaKeyPairCsp(keySize);                
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return GenerateRsaKeyPairOpenssl(keySize);                
-                else
-                    return GenerateRsaKeyPairDotnet(keySize);
+            {
+                try
+                {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        return GenerateRsaKeyPairCsp(keySize);
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        return GenerateRsaKeyPairOpenssl(keySize);
+                    else
+                        return GenerateRsaKeyPairDotnet(keySize);
+                }
+                catch
+                {
+                    // Fall Back to BouncyCastle in error
+                }
             }
 
             var keyPairGenerator = new RsaKeyPairGenerator();
@@ -181,7 +200,29 @@ namespace CryptoShark.Utilities
                 ecParams.H, ecParams.GetSeed());
         }
 
-        
+
+        private AsymmetricCipherKeyPair GenerateEccKeyPairDotNet(System.Security.Cryptography.ECCurve curve)
+        {
+            System.Security.Cryptography.ECDiffieHellman diffieHellman = null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                diffieHellman = new System.Security.Cryptography.ECDiffieHellmanCng(curve);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                diffieHellman = new System.Security.Cryptography.ECDiffieHellmanOpenSsl(curve);
+            else
+                diffieHellman = System.Security.Cryptography.ECDiffieHellman.Create(curve);
+            
+            var pkcs8Key = diffieHellman.ExportPkcs8PrivateKey();
+            var publicKey = diffieHellman.ExportSubjectPublicKeyInfo();            
+            
+            var keyPair = new AsymmetricCipherKeyPair(PublicKeyFactory.CreateKey(publicKey), PrivateKeyFactory.CreateKey(pkcs8Key));
+
+            diffieHellman.Dispose();
+            Array.Clear(pkcs8Key);
+
+            return keyPair;
+        }
+
         private AsymmetricCipherKeyPair GenerateRsaKeyPairCsp(int keySize)
         {
             // Use the Windows CSP if not running through transation (ex Windows on ARM)

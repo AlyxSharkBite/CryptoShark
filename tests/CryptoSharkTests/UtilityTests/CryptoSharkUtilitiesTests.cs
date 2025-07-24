@@ -42,21 +42,43 @@ namespace CryptoSharkTests.UtilityTests
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
-        public void CreateEccPrivateKeyTests(ECCurve curve)
+        public void CreateEccPrivateKeyTestsDotNetKey(ECCurve curve)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password);
+            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, true);
             Assert.That(privateKeyResult.IsSuccess, Is.True);
             Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
-        public void GetEccPublicKeyTests(ECCurve curve)
+        public void CreateEccPrivateKeyTestsBouncyCastleKey(ECCurve curve)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password).Value;
+            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, false);
+            Assert.That(privateKeyResult.IsSuccess, Is.True);
+            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetEccCurves))]
+        public void GetEccPublicKeyTestsDotNetKey(ECCurve curve)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password, true).Value;
+
+            var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
+            Assert.That(publicKeyResult.IsSuccess, Is.True);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetEccCurves))]
+        public void GetEccPublicKeyTestsBouncyCastleKey(ECCurve curve)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password, false).Value;
 
             var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);

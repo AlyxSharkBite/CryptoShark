@@ -14,7 +14,7 @@ namespace CryptoShark.Configuration
         public HashAlgorithm? DefaultHashAlgorithm { get; set; }
         public RsaKeySize? DefaultRsaKeySize { get; set; }
         public bool? CompressBeforeEncryption { get; set; }
-        public bool? PreferDotNetRsaKeyGeneration { get; set; }
+        public bool? PreferDotNetKeyGeneration { get; set; }
         public string DefaultRsaPadding { get; set; }
         public string DefaultEccCurveOid { get; set; }
     }
