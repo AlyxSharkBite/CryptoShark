@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoShark", "src\CryptoSh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoSharkTests", "tests\CryptoSharkTests\CryptoSharkTests.csproj", "{947D88C3-E3BA-40A5-8298-E2873C89AEBB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryotSharkBenchmarks", "benchmarks\CryotSharkBenchmarks\CryotSharkBenchmarks.csproj", "{4993C2E1-14C5-45F3-9051-03F5570281CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{947D88C3-E3BA-40A5-8298-E2873C89AEBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{947D88C3-E3BA-40A5-8298-E2873C89AEBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{947D88C3-E3BA-40A5-8298-E2873C89AEBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4993C2E1-14C5-45F3-9051-03F5570281CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4993C2E1-14C5-45F3-9051-03F5570281CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4993C2E1-14C5-45F3-9051-03F5570281CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4993C2E1-14C5-45F3-9051-03F5570281CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

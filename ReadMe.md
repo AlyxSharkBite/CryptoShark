@@ -26,12 +26,15 @@
 * Updated RSA Keys to use Encrypted PEM format same as ECC Keys
 * Replaced all .Net Rsa Cryptography Next Generation (CNG) with BouncyCastle code
 
-**Version 3.2.1**
-* Internal code updates to mke future enhaemnts easier
+**Version 3.5.0**
+* Added ability to default many options via ICryptoSharkConfiguration
+* Internal code updates to make future enhaemnts easier
 * Exposed all the internal parts allowing supplying the desired options
     * Hash Alorythm for verifying data integrity can now be chosen
-    * RSA Padding for RSA Encryption can now be set with stanard string 
+    * RSA Padding for RSA Encryption can now be set with stanard strings 
         * Example: 'OAEPWithSHA-256AndMGF1Padding'
+ * Performance Enhancements
+ * Added option to compress data before encryption useing [Huffman Coding](https://en.wikipedia.org/wiki/Huffman_coding)
 
 ## About
 Code written on macOS & Windows 11
@@ -108,18 +111,18 @@ VfeIOQ41hD/WJehRBGMRzspUwNhs0FIO+QjHJW1ikWW8dJryKF/YpWr+1sTot3ri
 - Utility class for hashing, key creation & SecureString creation.
 
 ### Methods
-- `ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);`
+- `ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);`
     - Will compute the hash of the given data. 
     - See `HashAlgorithm.cs` for list of supported Hash Algorithms
-- `string HashBytes(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);`
+- `string HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);`
     - Will compute the hash of the given data.
     - See `HashAlgorithm.cs` for list of supported Hash Algorithms
     - See `StringEncoding.cs` for list of supported Text Encodings
-- `ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);`
+- `ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);`
     - Creates an Asymetric Private Key in Pkcs8 Encrypted DER format
     - For Ecc Keys pass `EccKeyParameters` to method
     - For Rsa Keys pass `RsaKeyParameters` to method
-- `ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, CryptographyType cryptographyType);`
+- `ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, CryptographyType cryptographyType);`
     - Gets the Asymetric Public Key from an Asymetric Private Key 
     - For Ecc Keys use `CryptographyType.EllipticalCurveCryptography`
     - For Ecc Keys use `CryptographyType.RivestShamirAdlemanCryptography`
@@ -159,7 +162,7 @@ VfeIOQ41hD/WJehRBGMRzspUwNhs0FIO+QjHJW1ikWW8dJryKF/YpWr+1sTot3ri
 - `ReadOnlyMemory<byte> Encrypt(IAsymetricEncryptionRequest encryptionRequest);`
     - Encrypts data with ECC Public/Private Keys
     - Pass `AsymetricEncryptionRequest` to method
-- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);`
+- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password);`
     - Decrypts previously encrypted data
 
 ### Creation 
@@ -177,7 +180,7 @@ VfeIOQ41hD/WJehRBGMRzspUwNhs0FIO+QjHJW1ikWW8dJryKF/YpWr+1sTot3ri
 - `ReadOnlyMemory<byte> Encrypt(IAsymetricEncryptionRequest encryptionRequest);`
     - Encrypts data with RSA Public/Private Keys
     - Pass `AsymetricEncryptionRequest` to method
-- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);`
+- `ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password);`
     - Decrypts previously encrypted data
 
 ### Creation 

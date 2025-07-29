@@ -20,16 +20,18 @@ namespace CryptoShark.CryptographicProviders
         private readonly ILogger _logger;
         private readonly RsaEncryption _encryptor;
         private readonly RecordSerializer _recordSerializer;
+        private readonly ICryptoSharkConfiguration _cryptoSharkConfiguration;
 
-        public CryptoSharkRsaCryptography(ILogger logger)
+        public CryptoSharkRsaCryptography(ILogger logger, ICryptoSharkConfiguration cryptoSharkConfiguration)
         {
             _logger = logger;
+            _cryptoSharkConfiguration = cryptoSharkConfiguration;
             _encryptor = new RsaEncryption(logger);
-            _recordSerializer = new RecordSerializer(logger);
+            _recordSerializer = new RecordSerializer(logger);            
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password)
+        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password)
         {
             RsaCryptographyRecord record = null;
 
@@ -49,7 +51,7 @@ namespace CryptoShark.CryptographicProviders
             if (decryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", decryptionResult.Error);
 
-            return decryptionResult.Value.AsMemory();
+            return decryptionResult.Value;
         }
 
         /// <summary>
@@ -65,9 +67,15 @@ namespace CryptoShark.CryptographicProviders
             if (encryptionRequest is null)
                 throw new ArgumentNullException(nameof(encryptionRequest));
 
-            var encryptionResult = _encryptor.Encrypt(encryptionRequest.ClearData, encryptionRequest.PublicKey,
-                encryptionRequest.PrivateKey, encryptionRequest.EncryptionAlgorithm, encryptionRequest.HashAlgorithm,
-                encryptionRequest.Password, encryptionRequest.RsaPadding);
+            var encryptionResult = _encryptor.Encrypt(
+                encryptionRequest.ClearData,
+                encryptionRequest.PublicKey,
+                encryptionRequest.PrivateKey,
+                GetEncryptionAlgorithm(encryptionRequest.EncryptionAlgorithm),
+                GetHashAlgorithm(encryptionRequest.HashAlgorithm),
+                encryptionRequest.Password,
+                encryptionRequest.RsaPadding,
+                GetCompress(encryptionRequest));
 
             if (encryptionResult.IsFailure)
                 throw new CryptographicException("Decryption Failed, see inner exception(s)", encryptionResult.Error);
@@ -83,13 +91,58 @@ namespace CryptoShark.CryptographicProviders
             }
         }
 
+        private bool? GetCompress(IEncryptionRequest encryptionRequest)
+        {
+            if (_cryptoSharkConfiguration?.CompressBeforeEncryption is not null)
+                return _cryptoSharkConfiguration.CompressBeforeEncryption;
+
+            return encryptionRequest.CompressData;
+        }
+
+        private Enums.EncryptionAlgorithm GetEncryptionAlgorithm(Enums.EncryptionAlgorithm? algorithm)
+        {
+            if (_cryptoSharkConfiguration?.DefaultEncryptionAlgorithm is not null)
+                return _cryptoSharkConfiguration.DefaultEncryptionAlgorithm.Value;
+            else if (algorithm.HasValue)
+                return algorithm.Value;
+            else
+                return Enums.EncryptionAlgorithm.TwoFish;
+        }
+
+        private Enums.HashAlgorithm GetHashAlgorithm(Enums.HashAlgorithm? algorithm)
+        {
+            if (_cryptoSharkConfiguration?.DefaultHashAlgorithm is not null)
+                return _cryptoSharkConfiguration.DefaultHashAlgorithm.Value;
+            else if (algorithm.HasValue)
+                return algorithm.Value;
+            else
+                return Enums.HashAlgorithm.SHA_256;
+        }
+
+        /// <summary>
+        /// Creates a new CryptoSharkRsaCryptography
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="cryptoSharkConfiguration"></param>
+        /// <returns></returns>
+        public static ICryptoSharkAsymmetricCryptography Create(ILogger logger, ICryptoSharkConfiguration cryptoSharkConfiguration)
+            => new CryptoSharkRsaCryptography(logger, cryptoSharkConfiguration);
+
+        /// <summary>
+        /// Creates a new CryptoSharkRsaCryptography
+        /// </summary>
+        /// <param name="cryptoSharkConfiguration"></param>
+        /// <returns></returns>
+        public static ICryptoSharkAsymmetricCryptography Create(ICryptoSharkConfiguration cryptoSharkConfiguration)
+            => new CryptoSharkRsaCryptography(null, cryptoSharkConfiguration);
+
         /// <summary>
         /// Creates a new CryptoSharkRsaCryptography
         /// </summary>
         /// <param name="logger"></param>
         /// <returns></returns>
         public static ICryptoSharkAsymmetricCryptography Create(ILogger logger)
-            => new CryptoSharkRsaCryptography(logger);
+            => new CryptoSharkRsaCryptography(logger, null);
 
         /// <summary>
         /// Creates a new CryptoSharkRsaCryptography
@@ -97,6 +150,6 @@ namespace CryptoShark.CryptographicProviders
         /// <param name="logger"></param>
         /// <returns></returns>
         public static ICryptoSharkAsymmetricCryptography Create()
-            => new CryptoSharkRsaCryptography(null);
+            => new CryptoSharkRsaCryptography(null, null);
     }
 }

@@ -11,10 +11,12 @@ namespace CryptoShark.Requests
 {  
     public class AsymetricEncryptionRequest : IAsymetricEncryptionRequest
     {
-        const string DEFAULT_RSA_PADDING = "OAEPWithSHA-256AndMGF1Padding";
+        private const string DEFAULT_RSA_PADDING = "OAEPWithSHA-256AndMGF1Padding";
 
-        private AsymetricEncryptionRequest(byte[] publicKey, byte[] privateKey, byte[] clearData, SecureString password, 
-            EncryptionAlgorithm encryptionAlgorithm, HashAlgorithm hashAlgorithm, string rsaPadding = null)
+        private AsymetricEncryptionRequest(
+            ReadOnlyMemory<byte> publicKey, ReadOnlyMemory<byte> privateKey, ReadOnlyMemory<byte> clearData,
+            SecureString password, EncryptionAlgorithm? encryptionAlgorithm, HashAlgorithm? hashAlgorithm,
+            string rsaPadding, bool? compress)
         {
             PublicKey = publicKey;
             PrivateKey = privateKey;
@@ -22,6 +24,7 @@ namespace CryptoShark.Requests
             Password = password;
             EncryptionAlgorithm = encryptionAlgorithm;
             HashAlgorithm = hashAlgorithm;
+            CompressData = compress;
 
             if(String.IsNullOrEmpty(rsaPadding))
                 RsaPadding = DEFAULT_RSA_PADDING;
@@ -29,14 +32,17 @@ namespace CryptoShark.Requests
                 RsaPadding = rsaPadding;
         }
 
-        private AsymetricEncryptionRequest(byte[] publicKey, byte[] privateKey, byte[] clearData, string password, 
-            EncryptionAlgorithm encryptionAlgorithm, HashAlgorithm hashAlgorithm, string rsaPadding = null)
+        private AsymetricEncryptionRequest(
+            ReadOnlyMemory<byte> publicKey, ReadOnlyMemory<byte> privateKey, ReadOnlyMemory<byte> clearData,
+            string password, EncryptionAlgorithm? encryptionAlgorithm, HashAlgorithm? hashAlgorithm, string rsaPadding,
+            bool? compress)
         {
             PublicKey = publicKey;
             PrivateKey = privateKey;
             ClearData = clearData;            
             EncryptionAlgorithm = encryptionAlgorithm;
-            HashAlgorithm = hashAlgorithm;           
+            HashAlgorithm = hashAlgorithm;    
+            CompressData = compress;
 
             if (String.IsNullOrEmpty(rsaPadding))
                 RsaPadding = DEFAULT_RSA_PADDING;
@@ -51,32 +57,34 @@ namespace CryptoShark.Requests
         }
 
         /// <inheritdoc />
-        public byte[] PublicKey { get; private set; }
+        public ReadOnlyMemory<byte> PublicKey { get; private set; }
 
         /// <inheritdoc />
-        public byte[] PrivateKey { get; private set; }
+        public ReadOnlyMemory<byte> PrivateKey { get; private set; }
 
         /// <inheritdoc />
-        public byte[] ClearData { get; private set; }
+        public ReadOnlyMemory<byte> ClearData { get; private set; }
 
         /// <inheritdoc />
         public SecureString Password { get; private set; }
 
         /// <inheritdoc />
-        public EncryptionAlgorithm EncryptionAlgorithm { get; private set; }
+        public EncryptionAlgorithm? EncryptionAlgorithm { get; private set; }
 
         /// <inheritdoc />
-        public HashAlgorithm HashAlgorithm { get; private set; }
+        public HashAlgorithm? HashAlgorithm { get; private set; }
 
         /// <inheritdoc />
         public string RsaPadding { get; private set; }
 
+        /// <inheritdoc />
+        public bool? CompressData { get; private set; }
 
-        public static IAsymetricEncryptionRequest CreateRequest(byte[] publicKey, byte[] privateKey, byte[] clearData, SecureString password, EncryptionAlgorithm encryptionAlgorithm, HashAlgorithm hashAlgorithm, string rsaPadding = null)
-            => new AsymetricEncryptionRequest(publicKey, privateKey, clearData, password, encryptionAlgorithm, hashAlgorithm, rsaPadding);
+        public static IAsymetricEncryptionRequest CreateRequest(ReadOnlyMemory<byte> publicKey, ReadOnlyMemory<byte> privateKey, ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, string rsaPadding = null, bool? compress = null)
+            => new AsymetricEncryptionRequest(publicKey, privateKey, clearData, password, encryptionAlgorithm, hashAlgorithm, rsaPadding, compress);
         
-        public static IAsymetricEncryptionRequest CreateRequest(byte[] publicKey, byte[] privateKey, byte[] clearData, string password, EncryptionAlgorithm encryptionAlgorithm, HashAlgorithm hashAlgorithm, string rsaPadding = null)
-            => new AsymetricEncryptionRequest(publicKey, privateKey, clearData, password, encryptionAlgorithm, hashAlgorithm, rsaPadding);
+        public static IAsymetricEncryptionRequest CreateRequest(ReadOnlyMemory<byte> publicKey, ReadOnlyMemory<byte> privateKey, ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, string rsaPadding = null, bool? compress = null)
+            => new AsymetricEncryptionRequest(publicKey, privateKey, clearData, password, encryptionAlgorithm, hashAlgorithm, rsaPadding, compress);
      
     }
 }

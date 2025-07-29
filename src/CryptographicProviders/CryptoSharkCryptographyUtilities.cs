@@ -20,56 +20,81 @@ namespace CryptoShark.CryptographicProviders
         private readonly ILogger _logger;
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
+        private readonly ICryptoSharkConfiguration _cryptoSharkConfiguration;
 
-        public CryptoSharkCryptographyUtilities(ILogger logger)
+        public CryptoSharkCryptographyUtilities(ILogger logger, ICryptoSharkConfiguration configuration)
         {
             _logger = logger;
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
             _secureStringUtilities = new SecureStringUtilities();
+            _cryptoSharkConfiguration = configuration;
         }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
+        public ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
         {
             if (parameters is null) 
                 throw new ArgumentNullException(nameof(parameters));    
 
-            Result<byte[], Exception> keyResult;
+            Result<ReadOnlyMemory<byte>, Exception> keyResult;
 
             if (parameters.GetType() == typeof(EccKeyParameters)) 
             { 
                 var eccParams = (EccKeyParameters)parameters;
-                keyResult = _cryptoSharkUtilities.CreateEccKey(eccParams.Curve, eccParams.Password);
+
+                var curve = eccParams.Curve;
+                if(!String.IsNullOrEmpty(_cryptoSharkConfiguration?.DefaultEccCurveOid) )
+                {
+                    var oidKeyResult = _cryptoSharkUtilities.ParseCurveFomOid(_cryptoSharkConfiguration.DefaultEccCurveOid);
+                    if(oidKeyResult.IsSuccess)
+                        curve = oidKeyResult.Value;
+                }
+
+                keyResult = _cryptoSharkUtilities.CreateEccKey(curve, eccParams.Password, _cryptoSharkConfiguration?.PreferDotNetKeyGeneration ?? false);
             }
             else if (parameters.GetType() == typeof(RsaKeyParameters))
             {
                 var rsaParams = (RsaKeyParameters)parameters;
-                keyResult = _cryptoSharkUtilities.CreateRsaKey(rsaParams.KeySize, rsaParams.Password);
+                var keySize = _cryptoSharkConfiguration?.DefaultRsaKeySize ?? rsaParams.KeySize;
+                keyResult = _cryptoSharkUtilities.CreateRsaKey(
+                    keySize, 
+                    rsaParams.Password,
+                    _cryptoSharkConfiguration?.PreferDotNetKeyGeneration ?? false);
             }
             else
             {
                 _logger?.LogError("CryptoShark:CryptoSharkCryptographyUtilities:CreateAsymetricKey {message}", $"Unknown Type {parameters.GetType().Name}");
-                keyResult = Result.Failure<byte[], Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
+                keyResult = Result.Failure<ReadOnlyMemory<byte>, Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
             }
 
             if(keyResult.IsFailure)
                 throw new CryptographicException("CreateAsymetricKey Failed, see inner exception(s)", keyResult.Error);
 
-            return keyResult.Value.AsSpan();
+            return keyResult.Value;
         }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
+        public ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, hashAlgorithm);
             if (hashResult.IsFailure)
                 throw new CryptographicException("Hash Failed, see inner exception(s)", hashResult.Error);
 
-            return hashResult.Value.AsSpan();
+            return hashResult.Value;
         }
 
         /// <inheritdoc />
-        public string HashBytes(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm, StringEncoding encoding)
+        public ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data)
+        {
+            var hashResult = _cryptoSharkUtilities.Hash(data, _cryptoSharkConfiguration?.DefaultHashAlgorithm ?? Enums.HashAlgorithm.SHA_256);
+            if (hashResult.IsFailure)
+                throw new CryptographicException("Hash Failed, see inner exception(s)", hashResult.Error);
+
+            return hashResult.Value;
+        }
+
+        /// <inheritdoc />
+        public string HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm, StringEncoding encoding)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, encoding, hashAlgorithm);
             if (hashResult.IsFailure)
@@ -78,9 +103,19 @@ namespace CryptoShark.CryptographicProviders
             return hashResult.Value;
         }
 
+        /// <inheritdoc />
+        public string HashBytes(ReadOnlyMemory<byte> data, StringEncoding encoding)
+        {
+            var hashResult = _cryptoSharkUtilities.Hash(data, encoding, _cryptoSharkConfiguration?.DefaultHashAlgorithm ?? Enums.HashAlgorithm.SHA_256);
+            if (hashResult.IsFailure)
+                throw new CryptographicException("Hash Failed, see inner exception(s)", hashResult.Error);
+
+            return hashResult.Value;
+        }
+
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, 
+        public ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, 
             CryptographyType cryptographyType)
         {
             switch (cryptographyType)
@@ -90,14 +125,14 @@ namespace CryptoShark.CryptographicProviders
                         var result = _cryptoSharkUtilities.GetEccPublicKey(privateKey, password);
                         if (result.IsFailure)
                             throw new CryptographicException("Failed to get public key, see inner exception(s)", result.Error);
-                        return result.Value.AsSpan();
+                        return result.Value;
                     } 
                 case CryptographyType.RivestShamirAdlemanCryptography:
                     {
                         var result = _cryptoSharkUtilities.GetRsaPublicKey(privateKey, password);
                         if (result.IsFailure)
                             throw new CryptographicException("Failed to get public key, see inner exception(s)", result.Error);
-                        return result.Value.AsSpan();
+                        return result.Value;
                     }
                 default:
                     throw new ArgumentException($"Invalid CryptographyType {cryptographyType}");
@@ -114,16 +149,33 @@ namespace CryptoShark.CryptographicProviders
         /// Creates a CryptoSharkCryptographyUtilities 
         /// </summary>
         /// <param name="logger"></param>
+        /// <param name="cryptoSharkConfiguration"></param>
+        /// <returns></returns>
+        public static ICryptoSharkCryptographyUtilities Create(ILogger logger, ICryptoSharkConfiguration cryptoSharkConfiguration)
+            => new CryptoSharkCryptographyUtilities(logger, cryptoSharkConfiguration);
+
+        /// <summary>
+        /// Creates a CryptoSharkCryptographyUtilities 
+        /// </summary>
+        /// <param name="cryptoSharkConfiguration"></param>
+        /// <returns></returns>
+        public static ICryptoSharkCryptographyUtilities Create(ICryptoSharkConfiguration cryptoSharkConfiguration)
+            => new CryptoSharkCryptographyUtilities(null, cryptoSharkConfiguration);
+
+        /// <summary>
+        /// Creates a CryptoSharkCryptographyUtilities 
+        /// </summary>
+        /// <param name="logger"></param>
         /// <returns></returns>
         public static ICryptoSharkCryptographyUtilities Create(ILogger logger)
-            => new CryptoSharkCryptographyUtilities(logger);
+            => new CryptoSharkCryptographyUtilities(logger, null);
 
         /// <summary>
         /// Creates a CryptoSharkCryptographyUtilities 
         /// </summary>
         /// <returns></returns>
         public static ICryptoSharkCryptographyUtilities Create()
-            => new CryptoSharkCryptographyUtilities(null);
+            => new CryptoSharkCryptographyUtilities(null, null);
 
 
     }

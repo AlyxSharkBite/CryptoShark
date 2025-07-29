@@ -2,6 +2,7 @@
 using CryptoShark.Utilities;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,19 +16,23 @@ namespace CryptoSharkTests.UtilityTests
 {
     public class CryptoSharkUtilitiesTests
     {
-        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();
+        private static SecureStringUtilities _secureStringUtilities = new SecureStringUtilities();      
+        private static RsaHelper _rsaHelper = new RsaHelper();
 
-        private byte[] _sampleData;        
+        private ReadOnlyMemory<byte> _sampleData;        
         private Mock<ILogger> _mockLogger;
-        private SecureString _password;
-        private static readonly object _lock = new object();
-
+        private SecureString _password;       
+        private SecureRandom _random;
+        
         [SetUp]
         public void Setup()
         {
-            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);            
-            _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");
-            _password = StringToSecureString("Abc123");
+            byte[] sample = new byte[1024 * 10]; // 10Mb
+            _random = new SecureRandom();
+            _random.NextBytes(sample);
+            _sampleData = sample.ToArray();
+            _mockLogger = new Mock<ILogger>(MockBehavior.Loose);                        
+            _password = StringToSecureString("Abc123");            
         }
 
         [TearDown]
@@ -37,35 +42,67 @@ namespace CryptoSharkTests.UtilityTests
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
-        public void CreateEccPrivateKeyTests(ECCurve curve)
+        public void CreateEccPrivateKeyTestsDotNetKey(ECCurve curve)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password);
+            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, true);
             Assert.That(privateKeyResult.IsSuccess, Is.True);
-            Assert.That(privateKeyResult.Value, Is.Not.Null);
+            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
-        public void GetEccPublicKeyTests(ECCurve curve)
+        public void CreateEccPrivateKeyTestsBouncyCastleKey(ECCurve curve)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password).Value;
+            var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, false);
+            Assert.That(privateKeyResult.IsSuccess, Is.True);
+            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetEccCurves))]
+        public void GetEccPublicKeyTestsDotNetKey(ECCurve curve)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password, true).Value;
 
             var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value, Is.Not.Null);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
         }
 
-        [TestCaseSource(nameof(GetRsaKeySizes))]
-        public void CreateRsaPrivateKeyTests(RsaKeySize rsaKeySize)
+        [TestCaseSource(nameof(GetEccCurves))]
+        public void GetEccPublicKeyTestsBouncyCastleKey(ECCurve curve)
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password);
+            var privateKey = cryptoSharkUtilities.CreateEccKey(curve, _password, false).Value;
+
+            var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
+            Assert.That(publicKeyResult.IsSuccess, Is.True);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetRsaKeySizes))]
+        public void CreateRsaPrivateKeyTestsBouncyCastle(RsaKeySize rsaKeySize)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, false);
             Assert.That(keyResult.IsSuccess, Is.True);
-            Assert.That(keyResult.Value, Is.Not.Null);
+            Assert.That(keyResult.Value.IsEmpty, Is.False);
+        }
+
+        [TestCaseSource(nameof(GetRsaKeySizes))]
+        public void CreateRsaPrivateKeyTestsDotNet(RsaKeySize rsaKeySize)
+        {
+            CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
+
+            var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, true);
+            Assert.That(keyResult.IsSuccess, Is.True);
+            Assert.That(keyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -73,11 +110,14 @@ namespace CryptoSharkTests.UtilityTests
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKey = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password).Value;
+            var privateKey = new ReadOnlyMemory<byte>(_rsaHelper
+                    .RsaKeyData
+                    .First(x=>x.RsaKeySize == rsaKeySize)
+                .RsaPrivateKey);                
 
             var publicKeyResult = cryptoSharkUtilities.GetRsaPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value, Is.Not.Null);
+            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -86,14 +126,14 @@ namespace CryptoSharkTests.UtilityTests
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
             foreach(StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsMemory(), enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hash(_sampleData, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsSpan(), enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hash(_sampleData, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
@@ -104,13 +144,13 @@ namespace CryptoSharkTests.UtilityTests
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var hashResult = cryptoSharkUtilities.Hash(_sampleData.AsMemory(), hashAlgorithm);
+            var hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
-            hashResult = cryptoSharkUtilities.Hash(_sampleData.AsSpan(), hashAlgorithm);
+            hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -121,14 +161,14 @@ namespace CryptoSharkTests.UtilityTests
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsMemory(), key, enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
 
             foreach (StringEncoding enoding in GetStringEncodings())
             {
-                var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsSpan(), key, enoding, hashAlgorithm);
+                var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, enoding, hashAlgorithm);
                 Assert.That(hashResult.IsSuccess, Is.True);
                 Assert.That(String.IsNullOrEmpty(hashResult.Value), Is.False);
             }
@@ -140,27 +180,28 @@ namespace CryptoSharkTests.UtilityTests
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
             var key = GetKey();
 
-            var hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsMemory(), key, hashAlgorithm);
+            var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
-            hashResult = cryptoSharkUtilities.Hmac(_sampleData.AsSpan(), key, hashAlgorithm);
+            hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value, Is.Not.Null);
+            Assert.That(hashResult.Value.IsEmpty, Is.False);
 
         }
 
-        private static ReadOnlySpan<byte> GetKey()
+        private static ReadOnlyMemory<byte> GetKey()
         {
-            byte[] key = null;
-            lock (_lock)
+            ReadOnlyMemory<byte> key = null;
+
+            using (var aesCng = AesCng.Create())
             {
-                using var aesCng = AesCng.Create();
                 aesCng.KeySize = 256;
                 aesCng.GenerateKey();
                 key = aesCng.Key;
             }
-            return new ReadOnlySpan<byte>(key);
+            
+            return key;
         }
 
         private static Array GetStringEncodings()

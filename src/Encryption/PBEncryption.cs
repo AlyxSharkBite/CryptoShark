@@ -23,7 +23,7 @@ namespace CryptoShark
     internal sealed class PBEncryption
     {
         private const int KEY_SIZE = 256;
-        private readonly ILogger _logger;
+        private readonly ILogger _logger;       
         private readonly CryptoSharkUtilities _cryptoSharkUtilities;
         private readonly SecureStringUtilities _secureStringUtilities;
         private readonly SecureRandom _secureRandom;
@@ -34,22 +34,18 @@ namespace CryptoShark
         /// <param name="logger"></param>
         public PBEncryption(ILogger logger)
         {
-            _logger = logger;
+            _logger = logger;            
             _secureStringUtilities = new SecureStringUtilities();
             _cryptoSharkUtilities = new CryptoSharkUtilities(logger);
-            _secureRandom = new SecureRandom();
+            _secureRandom = new SecureRandom();            
         }
-
-        /// <summary>
-        ///     Encrypts the specified data with specified algorithm        
-        /// </summary>
-        /// <param name="clearData">Data to Encrypt</param>
-        /// <param name="encryptionAlgorithm">Encryption Algorithm to use</param> 
-        /// <param name="hashAlgorithm">Hashing Algorithm to use</param> 
-        /// <param name="password">Password for encryption</param>        
-        /// <returns>Encryption Results</returns>
-        public Result<PbeCryptographyRecord, Exception> Encrypt(ReadOnlyMemory<byte> clearData, EncryptionAlgorithm encryptionAlgorithm,
-            CryptoShark.Enums.HashAlgorithm hashAlgorithm, SecureString password)
+        
+        public Result<PbeCryptographyRecord, Exception> Encrypt(
+            ReadOnlyMemory<byte> clearData,
+            EncryptionAlgorithm encryptionAlgorithm,
+            Enums.HashAlgorithm hashAlgorithm,
+            SecureString password,
+            bool? compress)
         {
             try
             {
@@ -75,18 +71,19 @@ namespace CryptoShark
                     return Result.Failure<PbeCryptographyRecord, Exception>(hashResult.Error);
 
                 // Encrypt
-                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value);
+                var encrypted = engine.Encrypt(clearData, keyResult.Value, nonceResult.Value, compress ?? false);
 
                 return new PbeCryptographyRecord
                 {
                     EncryptionAlgorithm = encryptionAlgorithm,
-                    EncryptedData = encrypted,
-                    Hash = hashResult.Value,
+                    EncryptedData = encrypted.Span.ToArray(),
+                    Hash = hashResult.Value.ToArray(),
                     Iterations = itterations,
-                    Nonce = nonceResult.Value,
-                    Salt = saltResult.Value,
+                    Nonce = nonceResult.Value.ToArray(),
+                    Salt = saltResult.Value.ToArray(),
                     HashAlgorithm = hashAlgorithm
                 };
+
             }
             catch (Exception ex)
             {
@@ -107,8 +104,8 @@ namespace CryptoShark
         /// <param name="hmacHash">Hash of Decrypted Data</param>
         /// <param name="itterations">Iterations for the PBKDF2 Key Derivation</param>                
         /// <returns></returns>
-        public Result<byte[], Exception> Decrypt(byte[] encryptedData, SecureString password, EncryptionAlgorithm encryptionAlgorithm,
-            CryptoShark.Enums.HashAlgorithm hashAlgorithm, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> salt, ReadOnlySpan<byte> hmacHash, int itterations)
+        public Result<ReadOnlyMemory<byte>, Exception> Decrypt(ReadOnlyMemory<byte> encryptedData, SecureString password, EncryptionAlgorithm encryptionAlgorithm,
+            CryptoShark.Enums.HashAlgorithm hashAlgorithm, ReadOnlyMemory<byte> nonce, ReadOnlyMemory<byte> salt, ReadOnlyMemory<byte> hmacHash, int itterations)
         {
             try
             {
@@ -118,56 +115,56 @@ namespace CryptoShark
                 // Generate the Key
                 var keyTsk = PasswordDeriveBytes(password, salt, KEY_SIZE, itterations);
                 if (keyTsk.IsFailure)
-                    return Result.Failure<byte[], Exception>(keyTsk.Error);
+                    return Result.Failure<ReadOnlyMemory<byte>, Exception>(keyTsk.Error);
 
                 // Decrypt the Data
                 var decrypted = engine.Decrypt(encryptedData, keyTsk.Value, nonce);
 
                 // Validate Hash
-                var verifyTask = _cryptoSharkUtilities.Hmac(decrypted.AsMemory(), keyTsk.Value, hashAlgorithm);
+                var verifyTask = _cryptoSharkUtilities.Hmac(decrypted, keyTsk.Value, hashAlgorithm);
                 if (verifyTask.IsFailure)
-                    return Result.Failure<byte[], Exception>(verifyTask.Error);
+                    return Result.Failure<ReadOnlyMemory<byte>, Exception>(verifyTask.Error);
 
-                if (!verifyTask.Value.SequenceEqual(hmacHash.ToArray()))
-                    return Result.Failure<byte[], Exception>(new CryptographicException("Hash Of Decrypoted Data Does Not Match"));
+                if (!verifyTask.Value.Span.SequenceEqual(hmacHash.Span))
+                    return Result.Failure<ReadOnlyMemory<byte>, Exception>(new CryptographicException("Hash Of Decrypoted Data Does Not Match"));
 
                 return decrypted;
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:PBEncryption:Decrypt {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
 
-        private Result<byte[], Exception> PasswordDeriveBytes(SecureString password, ReadOnlySpan<byte> salt, int keySize, int itterations)
+        private Result<ReadOnlyMemory<byte>, Exception> PasswordDeriveBytes(SecureString password, ReadOnlyMemory<byte> salt, int keySize, int itterations)
         {
             try
             {
                 using (var deriveyutes = new Rfc2898DeriveBytes(_secureStringUtilities.SecureStringToString(password), salt.ToArray(), itterations, HashAlgorithmName.SHA512))
-                    return deriveyutes.GetBytes(keySize / 8);
+                    return new ReadOnlyMemory<byte>(deriveyutes.GetBytes(keySize / 8));
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:PBEncryption:PasswordDeriveBytes {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
 
         }
 
-        private Result<byte[], Exception> GenerateSalt(int size = 16)
+        private Result<ReadOnlyMemory<byte>, Exception> GenerateSalt(int size = 16)
         {
             try
             {
                 var salt = new byte[size];
                _secureRandom.NextBytes(salt);
 
-                return salt;
+                return new ReadOnlyMemory<byte>(salt);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:PBEncryption:GenerateSalt {message}", ex.Message);
-                return Result.Failure<byte[], Exception>(ex);
+                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
             }
         }
     }

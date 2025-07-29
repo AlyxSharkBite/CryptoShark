@@ -22,7 +22,16 @@ namespace CryptoShark.Interfaces
         /// <param name="hashAlgorithm"></param>
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);
+        ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);
+
+        /// <summary>
+        /// Hashes Binary Data with default Hash Alorithm
+        /// (If not specified in ICryptoSharkConfiguration
+        /// will use SHA-256)
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data);
 
         /// <summary>
         /// Hashes Binary Data
@@ -32,7 +41,17 @@ namespace CryptoShark.Interfaces
         /// <param name="encoding"></param>
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
-        string HashBytes(ReadOnlySpan<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);
+        string HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm, Enums.StringEncoding encoding);
+
+        /// <summary>
+        /// Hashes Binary Data with default Hash Alorithm
+        /// (If not specified in ICryptoSharkConfiguration
+        /// will use SHA-256) 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        string HashBytes(ReadOnlyMemory<byte> data, Enums.StringEncoding encoding);
 
         /// <summary>
         /// Creates an Asymetric Private Key
@@ -41,7 +60,7 @@ namespace CryptoShark.Interfaces
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);
+        ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);
 
         /// <summary>
         /// Gets The Public Key For Given Private Key
@@ -52,7 +71,7 @@ namespace CryptoShark.Interfaces
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, CryptographyType cryptographyType);
+        ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, CryptographyType cryptographyType);
 
         /// <summary>
         /// Returns SecureString Containing The String Value
@@ -109,6 +128,6 @@ namespace CryptoShark.Interfaces
         /// <param name="password"></param>
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);
+        ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password);
     }
 }
