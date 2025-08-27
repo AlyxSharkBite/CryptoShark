@@ -41,7 +41,7 @@ namespace CryotSharkBenchmarks
         public byte[] CreateEccKey()
         {
             using var keyParams = new EccKeyParameters(
-                 typeof(EccNistKeyGenerationBenchmark).Name,
+                 typeof(EccNistKeyGenerationBenchmark).Name.ToCharArray(),
                  ECCurve.CreateFromFriendlyName(CurveName));
 
             var key = _utilities.CreateAsymetricKey(keyParams)

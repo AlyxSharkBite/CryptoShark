@@ -14,13 +14,15 @@ namespace CryptoShark.Options
         public SecureString Password {  get; init; }
         public ECCurve Curve { get; init; }
 
-        public EccKeyParameters(string password, ECCurve curve)
+        public EccKeyParameters(char[] password, ECCurve curve)
         {
             Password = new SecureString();
-            foreach(var c in password.ToCharArray())
+            foreach(var c in password)
                 Password.AppendChar(c);
 
             Password.MakeReadOnly();
+
+            Array.Clear(password);
 
             Curve = curve;
         }

@@ -25,7 +25,7 @@ public class ECDsaSignatureTests
         Assert.That(signature, Is.Not.Null);
 
         var data = signature.ToArray();
-        Assert.That(data.IsEmpty, Is.False);
+        Assert.That(data.Length, Is.GreaterThan(0));
         
         var restoredignature = ECDsaSignature.FromByteArray(data);
         Assert.That(restoredignature, Is.Not.Null);

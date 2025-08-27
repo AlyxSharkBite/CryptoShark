@@ -34,7 +34,10 @@ namespace CryptoShark.Engine
         /// <param name="nonce">Nonce Token</param>
         /// <param name="compress">Compress data before encryption Token</param>
         /// <returns></returns>
-        public ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce, bool compress)
+        public ReadOnlyMemory<byte> Encrypt(ReadOnlyMemory<byte> data,
+            ReadOnlySpan<byte> key,
+            ReadOnlyMemory<byte> nonce,
+            bool compress)
         {
             // Create the Encryption Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
@@ -48,7 +51,7 @@ namespace CryptoShark.Engine
 
             // Create the Paramters used to emcrypt
             var cipherParameters = new AeadParameters(
-                new KeyParameter(key.ToArray()),
+                new KeyParameter(key),
                 8 * cipher.GetBlockSize(),
                 nonce.ToArray());
 
@@ -68,6 +71,10 @@ namespace CryptoShark.Engine
             // Process Final Block
             cipher.DoFinal(encryptedData, res);            
 
+            // Cler the Clear Data 
+            data = ReadOnlyMemory<byte>.Empty;
+            key = ReadOnlySpan<byte>.Empty;
+
             return encryptedData;
         }
 
@@ -78,7 +85,10 @@ namespace CryptoShark.Engine
         /// <param name="key">Encryption Key</param>
         /// <param name="nonce">Nonce Token</param>
         /// <returns></returns>
-        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, ReadOnlyMemory<byte> nonce)
+        public ReadOnlyMemory<byte> Decrypt(
+            ReadOnlyMemory<byte> data,
+            ReadOnlySpan<byte> key,
+            ReadOnlySpan<byte> nonce)
         {
             // Create the Engine
             var engine = GetBlockEngine(_encryptionAlgorithm);
@@ -111,6 +121,9 @@ namespace CryptoShark.Engine
             // Deompress if needed
             if (decryptedData[0] == 0x78 && decryptedData[1] == 0x01)
                 decryptedData = Decompress(decryptedData);
+
+            // Clear Key
+            key = ReadOnlySpan<byte>.Empty;
 
             return decryptedData;
         }

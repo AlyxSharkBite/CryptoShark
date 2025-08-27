@@ -31,7 +31,7 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password)
+        public ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password)
         {
             EccCryptographyRecord record = null;
 

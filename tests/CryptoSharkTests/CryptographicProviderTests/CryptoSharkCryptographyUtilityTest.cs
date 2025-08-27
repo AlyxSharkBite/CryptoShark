@@ -11,7 +11,7 @@ namespace CryptoSharkTests;
 public class Create
 {    
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
-    private readonly string _password = "Abc123";
+    private char[] _password = new char[] { 'A', 'b', 'c', '1', '2', '3' };
     private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514];
 
     [SetUp]

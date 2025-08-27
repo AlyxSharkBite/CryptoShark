@@ -47,13 +47,13 @@ namespace CryptoShark.Interfaces
         /// <summary>
         /// Public Key
         /// </summary>
-        ReadOnlyMemory<byte> PublicKey { get; }
+        byte[] PublicKey { get; }
 
 
         /// <summary>
         /// Private Key
         /// </summary>
-        ReadOnlyMemory<byte> PrivateKey { get; }
+        byte[] PrivateKey { get; }
 
         /// <summary>
         /// Padding (RSA Only) 

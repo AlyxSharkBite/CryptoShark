@@ -26,7 +26,7 @@ namespace CryptoShark.Utilities
         private readonly AsymmetricCipherUtilities _asymmetricCipherUtilities = new AsymmetricCipherUtilities();
         private readonly ILogger _logger = logger;
 
-        public Result<ReadOnlyMemory<byte>, Exception> CreateEccKey(ECCurve curve, SecureString password, bool useDotNet)
+        public Result<byte[], Exception> CreateEccKey(ECCurve curve, SecureString password, bool useDotNet)
         { 
             try
             {
@@ -38,11 +38,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateEccKey {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }            
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> GetEccPublicKey(ReadOnlyMemory<byte> encryptedEccKey, SecureString password)
+        public Result<byte[], Exception> GetEccPublicKey(ReadOnlySpan<byte> encryptedEccKey, SecureString password)
         {
             try
             {
@@ -53,11 +53,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetEccPublicKey {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> CreateRsaKey(RsaKeySize keySize, 
+        public Result<byte[], Exception> CreateRsaKey(RsaKeySize keySize, 
             SecureString password, bool useDotNet)
         {
             try
@@ -71,11 +71,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:CreateRsaKey {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> GetRsaPublicKey(ReadOnlyMemory<byte> encryptedRsaKey, SecureString password)
+        public Result<byte[], Exception> GetRsaPublicKey(ReadOnlySpan<byte> encryptedRsaKey, SecureString password)
         {           
             try
             {
@@ -86,7 +86,7 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:GetRsaPublicKey {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }
         }
 
@@ -105,7 +105,7 @@ namespace CryptoShark.Utilities
             }
         }
 
-        public Result<ReadOnlyMemory<byte>, Exception> Hash(ReadOnlyMemory<byte> data, 
+        public Result<byte[], Exception> Hash(ReadOnlyMemory<byte> data, 
             Enums.HashAlgorithm hashAlgorithm)
         {
             try 
@@ -116,11 +116,11 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hash {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }
         }
         
-        public Result<ReadOnlyMemory<byte>, Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, 
+        public Result<byte[], Exception> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key, 
             Enums.HashAlgorithm hashAlgorithm)
         {
             try
@@ -131,7 +131,7 @@ namespace CryptoShark.Utilities
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "CryptoShark:CryptoSharkUtilities:Hmac {message}", ex.Message);
-                return Result.Failure<ReadOnlyMemory<byte>, Exception>(ex);
+                return Result.Failure<byte[], Exception>(ex);
             }
         }
 

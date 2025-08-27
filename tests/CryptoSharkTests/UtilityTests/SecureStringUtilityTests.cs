@@ -10,7 +10,7 @@ namespace CryptoSharkTests.UtilityTests
 {
     public class SecureStringUtilityTests
     {
-        private string _password = "Abc123";
+        private char[] _password = new char[] { 'A', 'b', 'c', '1', '2', '3' };
 
         [Test]
         public void SecureStringTest()
@@ -18,9 +18,9 @@ namespace CryptoSharkTests.UtilityTests
             SecureStringUtilities secureStringUtilities = new SecureStringUtilities();
             var securePassword = secureStringUtilities.StringToSecureString(_password);
 
-            var password = secureStringUtilities.SecureStringToString(securePassword);
-            Assert.That(String.IsNullOrEmpty(password), Is.False);
-            Assert.That(String.Equals(password, _password), Is.True);
+            var password = secureStringUtilities.SecureStringToCharArray(securePassword);
+            Assert.That(password.Length, Is.GreaterThan(0));
+            Assert.That(password.SequenceEqual(_password), Is.True);
         }      
 
     }

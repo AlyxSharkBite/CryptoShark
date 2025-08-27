@@ -14,13 +14,15 @@ namespace CryptoShark.Options
         public SecureString Password { get; init; }
         public RsaKeySize KeySize { get; init; }
 
-        public RsaKeyParameters(string password, RsaKeySize keySize)
+        public RsaKeyParameters(char[] password, RsaKeySize keySize)
         {
             Password = new SecureString();
-            foreach (var c in password.ToCharArray())
+            foreach (var c in password)
                 Password.AppendChar(c);
 
             Password.MakeReadOnly();
+
+            Array.Clear(password);
 
             KeySize = keySize;
         }

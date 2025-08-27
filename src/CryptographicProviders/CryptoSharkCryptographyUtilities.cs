@@ -31,12 +31,12 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
+        public ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters)
         {
             if (parameters is null) 
-                throw new ArgumentNullException(nameof(parameters));    
+                throw new ArgumentNullException(nameof(parameters));
 
-            Result<ReadOnlyMemory<byte>, Exception> keyResult;
+            Result<byte[], Exception> keyResult;
 
             if (parameters.GetType() == typeof(EccKeyParameters)) 
             { 
@@ -64,7 +64,7 @@ namespace CryptoShark.CryptographicProviders
             else
             {
                 _logger?.LogError("CryptoShark:CryptoSharkCryptographyUtilities:CreateAsymetricKey {message}", $"Unknown Type {parameters.GetType().Name}");
-                keyResult = Result.Failure<ReadOnlyMemory<byte>, Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
+                keyResult = Result.Failure<byte[], Exception>(new Exception($"Unknown Type {parameters.GetType().Name}"));
             }
 
             if(keyResult.IsFailure)
@@ -74,7 +74,7 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
+        public ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, hashAlgorithm);
             if (hashResult.IsFailure)
@@ -84,7 +84,7 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data)
+        public ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data)
         {
             var hashResult = _cryptoSharkUtilities.Hash(data, _cryptoSharkConfiguration?.DefaultHashAlgorithm ?? Enums.HashAlgorithm.SHA_256);
             if (hashResult.IsFailure)
@@ -115,7 +115,7 @@ namespace CryptoShark.CryptographicProviders
 
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, 
+        public ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, 
             CryptographyType cryptographyType)
         {
             switch (cryptographyType)
@@ -140,7 +140,7 @@ namespace CryptoShark.CryptographicProviders
         }
 
         /// <inheritdoc />
-        public SecureString StringToSecureString(string value)
+        public SecureString StringToSecureString(char[] value)
         {
             return _secureStringUtilities.StringToSecureString(value);
         }

@@ -79,7 +79,7 @@ namespace CryptoShark.Utilities
             return rsaKeyPair;
         }
 
-        public ReadOnlyMemory<byte> WritePrivateKey(AsymmetricKeyParameter asymmetricKeyParameter, SecureString password)
+        public byte[] WritePrivateKey(AsymmetricKeyParameter asymmetricKeyParameter, SecureString password)
         {
             using MemoryStream pemStream = new MemoryStream();
             using StreamWriter streamWriter = new StreamWriter(pemStream);
@@ -90,7 +90,7 @@ namespace CryptoShark.Utilities
             return pemStream.ToArray();
         }
 
-        public ReadOnlyMemory<byte> WritePublicKey(AsymmetricKeyParameter publicKey)
+        public byte[] WritePublicKey(AsymmetricKeyParameter publicKey)
         {
             using MemoryStream pemStream = new MemoryStream();
             using StreamWriter streamWriter = new StreamWriter(pemStream);

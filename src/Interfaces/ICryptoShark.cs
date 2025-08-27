@@ -22,7 +22,7 @@ namespace CryptoShark.Interfaces
         /// <param name="hashAlgorithm"></param>
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);
+        ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data, Enums.HashAlgorithm hashAlgorithm);
 
         /// <summary>
         /// Hashes Binary Data with default Hash Alorithm
@@ -31,7 +31,7 @@ namespace CryptoShark.Interfaces
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        ReadOnlyMemory<byte> HashBytes(ReadOnlyMemory<byte> data);
+        ReadOnlySpan<byte> HashBytes(ReadOnlyMemory<byte> data);
 
         /// <summary>
         /// Hashes Binary Data
@@ -60,7 +60,7 @@ namespace CryptoShark.Interfaces
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlyMemory<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);
+        ReadOnlySpan<byte> CreateAsymetricKey(IAsymmetricKeyParameter parameters);
 
         /// <summary>
         /// Gets The Public Key For Given Private Key
@@ -71,14 +71,14 @@ namespace CryptoShark.Interfaces
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        ReadOnlyMemory<byte> GetAsymetricPublicKey(ReadOnlyMemory<byte> privateKey, SecureString password, CryptographyType cryptographyType);
+        ReadOnlySpan<byte> GetAsymetricPublicKey(ReadOnlySpan<byte> privateKey, SecureString password, CryptographyType cryptographyType);
 
         /// <summary>
         /// Returns SecureString Containing The String Value
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        SecureString StringToSecureString(string value);
+        SecureString StringToSecureString(char[] value);
     }
 
     /// <summary>
@@ -128,6 +128,6 @@ namespace CryptoShark.Interfaces
         /// <param name="password"></param>
         /// <returns></returns>
         /// <exception cref="CryptographicException"></exception>
-        ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlyMemory<byte> privateKey, SecureString password);
+        ReadOnlyMemory<byte> Decrypt(ReadOnlyMemory<byte> ecnryptedData, ReadOnlySpan<byte> privateKey, SecureString password);
     }
 }

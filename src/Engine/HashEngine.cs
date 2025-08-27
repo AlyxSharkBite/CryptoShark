@@ -31,7 +31,7 @@ namespace CryptoShark.Engine
                 case StringEncoding.Hex:
                     return Org.BouncyCastle.Utilities.Encoders.Hex.ToHexString(hashed);
                 case StringEncoding.Base64:
-                    return Org.BouncyCastle.Utilities.Encoders.Base64.ToBase64String(hashed.ToArray());
+                    return Org.BouncyCastle.Utilities.Encoders.Base64.ToBase64String(hashed);
                 case StringEncoding.UrlBase64:
                     return Base64UrlEncode(hashed);
 
@@ -45,7 +45,7 @@ namespace CryptoShark.Engine
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public ReadOnlyMemory<byte> Hash(ReadOnlyMemory<byte> data)
+        public byte[] Hash(ReadOnlyMemory<byte> data)
         {
             Org.BouncyCastle.Crypto.IDigest digest = GetDigest();
 
@@ -64,7 +64,7 @@ namespace CryptoShark.Engine
         /// <param name="data"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public ReadOnlyMemory<byte> Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key)
+        public byte[] Hmac(ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> key)
         {
             Org.BouncyCastle.Crypto.IDigest digest = GetDigest();
 
@@ -96,7 +96,7 @@ namespace CryptoShark.Engine
                 case StringEncoding.Hex:
                     return Org.BouncyCastle.Utilities.Encoders.Hex.ToHexString(hashed);
                 case StringEncoding.Base64:
-                    return Org.BouncyCastle.Utilities.Encoders.Base64.ToBase64String(hashed.ToArray());
+                    return Org.BouncyCastle.Utilities.Encoders.Base64.ToBase64String(hashed);
                 case StringEncoding.UrlBase64:
                     return Base64UrlEncode(hashed);
 

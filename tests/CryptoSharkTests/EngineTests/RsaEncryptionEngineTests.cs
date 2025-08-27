@@ -27,7 +27,7 @@ namespace CryptoSharkTests.EngineTests
             _mockLogger = new Mock<ILogger>(MockBehavior.Loose);
             _cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);            
             _sampleData = Encoding.UTF8.GetBytes("EncryptionEngineTests Data");
-            _password = StringToSecureString("Abc123");
+            _password = StringToSecureString("Abc123".ToCharArray());
         }
 
         [TearDown]
@@ -150,7 +150,7 @@ namespace CryptoSharkTests.EngineTests
             return Enum.GetValues(typeof(CryptoShark.Enums.EncryptionAlgorithm));
         }
 
-        private static SecureString StringToSecureString(string s)
+        private static SecureString StringToSecureString(char[] s)
         {
             return _secureStringUtilities.StringToSecureString(s);
         }

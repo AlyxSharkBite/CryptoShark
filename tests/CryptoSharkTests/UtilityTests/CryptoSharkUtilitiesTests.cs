@@ -32,7 +32,7 @@ namespace CryptoSharkTests.UtilityTests
             _random.NextBytes(sample);
             _sampleData = sample.ToArray();
             _mockLogger = new Mock<ILogger>(MockBehavior.Loose);                        
-            _password = StringToSecureString("Abc123");            
+            _password = StringToSecureString("Abc123".ToCharArray());            
         }
 
         [TearDown]
@@ -48,7 +48,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, true);
             Assert.That(privateKeyResult.IsSuccess, Is.True);
-            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
+            Assert.That(privateKeyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
@@ -58,7 +58,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var privateKeyResult = cryptoSharkUtilities.CreateEccKey(curve, _password, false);
             Assert.That(privateKeyResult.IsSuccess, Is.True);
-            Assert.That(privateKeyResult.Value.IsEmpty, Is.False);
+            Assert.That(privateKeyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
@@ -70,7 +70,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
+            Assert.That(publicKeyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetEccCurves))]
@@ -82,7 +82,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var publicKeyResult = cryptoSharkUtilities.GetEccPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
+            Assert.That(publicKeyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -92,7 +92,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, false);
             Assert.That(keyResult.IsSuccess, Is.True);
-            Assert.That(keyResult.Value.IsEmpty, Is.False);
+            Assert.That(keyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -102,7 +102,7 @@ namespace CryptoSharkTests.UtilityTests
 
             var keyResult = cryptoSharkUtilities.CreateRsaKey(rsaKeySize, _password, true);
             Assert.That(keyResult.IsSuccess, Is.True);
-            Assert.That(keyResult.Value.IsEmpty, Is.False);
+            Assert.That(keyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetRsaKeySizes))]
@@ -110,14 +110,14 @@ namespace CryptoSharkTests.UtilityTests
         {
             CryptoSharkUtilities cryptoSharkUtilities = new CryptoSharkUtilities(_mockLogger.Object);
 
-            var privateKey = new ReadOnlyMemory<byte>(_rsaHelper
+            var privateKey = _rsaHelper
                     .RsaKeyData
                     .First(x=>x.RsaKeySize == rsaKeySize)
-                .RsaPrivateKey);                
+                .RsaPrivateKey;                
 
             var publicKeyResult = cryptoSharkUtilities.GetRsaPublicKey(privateKey, _password);
             Assert.That(publicKeyResult.IsSuccess, Is.True);
-            Assert.That(publicKeyResult.Value.IsEmpty, Is.False);
+            Assert.That(publicKeyResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -146,11 +146,11 @@ namespace CryptoSharkTests.UtilityTests
 
             var hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value.IsEmpty, Is.False);
+            Assert.That(hashResult.Value.Length, Is.GreaterThan(0));
 
             hashResult = cryptoSharkUtilities.Hash(_sampleData, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value.IsEmpty, Is.False);
+            Assert.That(hashResult.Value.Length, Is.GreaterThan(0));
         }
 
         [TestCaseSource(nameof(GetHashAlgorithms))]
@@ -182,11 +182,11 @@ namespace CryptoSharkTests.UtilityTests
 
             var hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value.IsEmpty, Is.False);
+            Assert.That(hashResult.Value.Length, Is.GreaterThan(0));
 
             hashResult = cryptoSharkUtilities.Hmac(_sampleData, key, hashAlgorithm);
             Assert.That(hashResult.IsSuccess, Is.True);
-            Assert.That(hashResult.Value.IsEmpty, Is.False);
+            Assert.That(hashResult.Value.Length, Is.GreaterThan(0));
 
         }
 
@@ -236,7 +236,7 @@ namespace CryptoSharkTests.UtilityTests
             return curves.ToArray();
         }
 
-        private static SecureString StringToSecureString(string s)
+        private static SecureString StringToSecureString(char[] s)
         {
             return _secureStringUtilities.StringToSecureString(s);
         }

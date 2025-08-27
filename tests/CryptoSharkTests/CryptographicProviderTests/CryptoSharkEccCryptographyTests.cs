@@ -13,8 +13,8 @@ namespace CryptoSharkTests;
 public class CryptoSharkEccCryptographyTests
 {
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
-    private readonly string _password = "Abc123";
-    private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514].AsMemory();
+    private char[] _password = new char[] { 'A', 'b', 'c', '1', '2', '3' };
+    private byte[] _sampleData = new byte[7514];
 
     [SetUp]
     public void Setup()
@@ -40,20 +40,25 @@ public class CryptoSharkEccCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void EncryptionSuccessTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
+        using var keyParams = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);
 
         var privateKey = utilities.CreateAsymetricKey(keyParams);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password), 
+        Array.Copy(_password, password, _password.Length);
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password), 
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var request = AsymetricEncryptionRequest.CreateRequest(publicKey, privateKey, _sampleData, 
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+        Array.Copy(_password, password, _password.Length);
+        var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData, 
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -62,15 +67,19 @@ public class CryptoSharkEccCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void EncryptionFailNullParamsTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
+        using var keyParams = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);
 
         var privateKey = utilities.CreateAsymetricKey(keyParams);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
+        Array.Copy(_password, password, _password.Length);
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password),
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
         Assert.That(privateKey.IsEmpty, Is.False);
 
@@ -83,20 +92,25 @@ public class CryptoSharkEccCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void EncryptionFailInvalidParamsTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new RsaKeyParameters(_password, CryptoShark.Enums.RsaKeySize.KeySize1024);
+        using var keyParams = new RsaKeyParameters(password, CryptoShark.Enums.RsaKeySize.KeySize1024);
 
         var privateKey = utilities.CreateAsymetricKey(keyParams);
         Assert.That(privateKey.IsEmpty, Is.False);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
+        Array.Copy(_password, password, _password.Length);
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password),
             CryptoShark.Enums.CryptographyType.RivestShamirAdlemanCryptography);
         Assert.That(privateKey.IsEmpty, Is.False);
 
+        Array.Copy(_password, password, _password.Length);
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         Assert.Throws<CryptographicException>(() => provider.Encrypt(request));
 
@@ -105,72 +119,92 @@ public class CryptoSharkEccCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void DecryptionSuccessTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
-        var privateKey = utilities.CreateAsymetricKey(keyParams);       
+        using var keyParams = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);
+        var privateKey = utilities.CreateAsymetricKey(keyParams);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
+        Array.Copy(_password, password, _password.Length);
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password),
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
-       
+
+        Array.Copy(_password, password, _password.Length);
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
 
-        var decrypted = provider.Decrypt(encrypted, privateKey, utilities.StringToSecureString(_password));
+        Array.Copy(_password, password, _password.Length);
+        var decrypted = provider.Decrypt(encrypted, privateKey, utilities.StringToSecureString(password));
         Assert.That(decrypted.IsEmpty, Is.False);
     }
 
     [TestCaseSource(nameof(CreateLoggers))]
     public void DecryptionFailNullParamTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
+        using var keyParams = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);
         var privateKey = utilities.CreateAsymetricKey(keyParams);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
+        Array.Copy(_password, password, _password.Length);
+
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password),
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
 
+        Array.Copy(_password, password, _password.Length);
+
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
 
         var privateKeyArray = privateKey.ToArray();
 
+        Array.Copy(_password, password, _password.Length);
+
         Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, privateKeyArray, 
-            utilities.StringToSecureString(_password)));
+            utilities.StringToSecureString(password)));
         
     }
 
     [TestCaseSource(nameof(CreateLoggers))]
     public void DecryptionFailInvalidParamTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(logger);
         var provider = CryptoSharkEccCryptography.Create(logger);
 
-        using var keyParams = new EccKeyParameters(_password, ECCurve.NamedCurves.nistP256);
+        using var keyParams = new EccKeyParameters(password, ECCurve.NamedCurves.nistP256);
         var privateKey = utilities.CreateAsymetricKey(keyParams);
 
-        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(_password),
+        Array.Copy(_password, password, _password.Length);
+        var publicKey = utilities.GetAsymetricPublicKey(privateKey, utilities.StringToSecureString(password),
             CryptoShark.Enums.CryptographyType.EllipticalCurveCryptography);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
 
         var privateKeyArray = new byte[privateKey.Length];
-
+        
+        Array.Copy(_password, password, _password.Length);
         Assert.Throws<CryptographicException>(() => provider.Decrypt(encrypted, privateKeyArray,
-            utilities.StringToSecureString(_password)));
+            utilities.StringToSecureString(password)));
 
     }
 

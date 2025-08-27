@@ -12,17 +12,16 @@ namespace CryptoSharkTests;
 public class CryptoSharkRsaCryptographyTests
 {
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
-    private readonly string _password = "Abc123";
-    private  ReadOnlyMemory<byte> _sampleData;
+    private char[] _password = new char[] { 'A', 'b', 'c', '1', '2', '3' };
+    private byte[] _sampleData;
     private static RsaHelper _rsaHelper = new RsaHelper();
 
     [SetUp]
     public void Setup()
     {
         SecureRandom random = new SecureRandom();
-        byte[] sample = new byte[1024 * 10]; // 10Mb
-        random.NextBytes(sample);
-        _sampleData = sample.AsMemory();        
+        _sampleData = new byte[1024 * 100]; // 100kb
+        random.NextBytes(_sampleData);               
     }
 
     [Test]
@@ -44,6 +43,9 @@ public class CryptoSharkRsaCryptographyTests
     [TestCaseSource(nameof(GetTestData))]
     public void EncryptionSuccessTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
@@ -54,7 +56,7 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
@@ -63,6 +65,9 @@ public class CryptoSharkRsaCryptographyTests
     [TestCaseSource(nameof(GetTestData))]
     public void EncryptionFailNullParamsTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
@@ -81,6 +86,9 @@ public class CryptoSharkRsaCryptographyTests
     [TestCaseSource(nameof(GetTestData))]
     public void EncryptionFailInvalidParamsTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
@@ -91,7 +99,7 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         Assert.Throws<CryptographicException>(() => provider.Encrypt(request));
 
@@ -100,48 +108,61 @@ public class CryptoSharkRsaCryptographyTests
     [TestCaseSource(nameof(GetTestData))]
     public void DecryptionSuccessTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
-        Assert.That(privateKey.IsEmpty, Is.False);
+        var privateKey = rsaTestData.RsaKeyData.RsaPrivateKey;
+        Assert.That(privateKey.Length, Is.GreaterThan(0));
 
-        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
-        Assert.That(privateKey.IsEmpty, Is.False);
+        var publicKey = rsaTestData.RsaKeyData.RsaPublicKey;
+        Assert.That(publicKey.Length, Is.GreaterThan(0));
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
+        
+        Array.Copy(_password, password, _password.Length);
 
-        var decrypted = provider.Decrypt(encrypted, privateKey, utilities.StringToSecureString(_password));
+        var decrypted = provider.Decrypt(encrypted, privateKey, utilities.StringToSecureString(password));
         Assert.That(decrypted.IsEmpty, Is.False);
     }
 
     [TestCaseSource(nameof(GetTestData))]
     public void DecryptionFailNullParamTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
-        var privateKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPrivateKey);
-        Assert.That(privateKey.IsEmpty, Is.False);
+        var privateKey = rsaTestData.RsaKeyData.RsaPrivateKey;
+        Assert.That(privateKey.Length, Is.GreaterThan(0));
 
-        var publicKey = new ReadOnlyMemory<byte>(rsaTestData.RsaKeyData.RsaPublicKey);
-        Assert.That(privateKey.IsEmpty, Is.False);
+        var publicKey = rsaTestData.RsaKeyData.RsaPublicKey;
+        Assert.That(publicKey.Length, Is.GreaterThan(0));
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);        
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+                
+        Array.Copy(_password, password, _password.Length);
 
         Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, privateKey,
-            utilities.StringToSecureString(_password)));
+            utilities.StringToSecureString(password)));
 
     }
 
     [TestCaseSource(nameof(GetTestData))]
     public void DecryptionFailInvalidParamTests(RsaTestData rsaTestData)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var utilities = CryptoSharkCryptographyUtilities.Create(rsaTestData.Logger);
         var provider = CryptoSharkRsaCryptography.Create(rsaTestData.Logger);
 
@@ -152,27 +173,19 @@ public class CryptoSharkRsaCryptographyTests
         Assert.That(privateKey.IsEmpty, Is.False);
 
         var request = AsymetricEncryptionRequest.CreateRequest(publicKey.ToArray(), privateKey.ToArray(), _sampleData,
-            _password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
+            password, CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var privateKeyArray = new byte[privateKey.Length];
 
         var encrypted = provider.Encrypt(request);
         Assert.That(encrypted.IsEmpty, Is.False);
+                
+        Array.Copy(_password, password, _password.Length);
 
         Assert.Throws<CryptographicException>(() => provider.Decrypt(encrypted, privateKeyArray,
-            utilities.StringToSecureString(_password)));
+            utilities.StringToSecureString(password)));
 
-    }
-
-    private static Array CreateLoggers()
-    {
-        return new[] { _mockLogger.Object, null };        
-    }
-
-    private static Array GetRsaKeySizes()
-    {
-        return Enum.GetValues(typeof(CryptoShark.Enums.RsaKeySize));
-    }
+    }   
 
     private static IEnumerable<RsaTestData> GetTestData() 
     { 

@@ -43,15 +43,15 @@ namespace CryptoShark.Utilities
             this._s = s;
         }
 
-        public ReadOnlyMemory<byte> ToArray()
+        public byte[] ToArray()
         {      
             var data = MessagePackSerializer.Serialize<ECDsaSignature>(this, 
                 StandardResolverAllowPrivate.Options);           
 
-            return new ReadOnlyMemory<byte>(data);
+            return data;
         }        
 
-        public static ECDsaSignature FromByteArray(ReadOnlyMemory<byte> data) 
+        public static ECDsaSignature FromByteArray(byte[] data) 
         {
             return MessagePackSerializer.Deserialize<ECDsaSignature>(
                 data, 

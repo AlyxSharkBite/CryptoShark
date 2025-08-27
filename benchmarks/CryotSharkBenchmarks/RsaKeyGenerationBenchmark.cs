@@ -32,7 +32,7 @@ namespace CryotSharkBenchmarks
         public byte[] CreateEccKey()
         {
             using var keyParams = new RsaKeyParameters(
-                    typeof(RsaKeyGenerationBenchmark).Name,
+                    typeof(RsaKeyGenerationBenchmark).Name.ToCharArray(),
                     (CryptoShark.Enums.RsaKeySize)RsaKeySize);
 
             var key = _utilities.CreateAsymetricKey(keyParams)

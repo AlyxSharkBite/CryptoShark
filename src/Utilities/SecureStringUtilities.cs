@@ -10,21 +10,6 @@ namespace CryptoShark.Utilities
 {
     internal sealed class SecureStringUtilities
     {
-        public String SecureStringToString(SecureString value)
-        {
-            IntPtr bstr = IntPtr.Zero;
-            try
-            {
-                bstr = Marshal.SecureStringToBSTR(value);
-                return Marshal.PtrToStringBSTR(bstr);
-            }
-            finally
-            {
-                if (bstr != IntPtr.Zero)
-                    Marshal.ZeroFreeBSTR(bstr);
-            }
-        }
-
         public char[] SecureStringToCharArray(SecureString value)
         {
             IntPtr bstr = IntPtr.Zero;
@@ -40,10 +25,10 @@ namespace CryptoShark.Utilities
             }
         }
 
-        public SecureString StringToSecureString(string value)
+        public SecureString StringToSecureString(char[] value)
         {
             var secureString = new SecureString();
-            foreach (var c in value.ToCharArray())
+            foreach (var c in value)
                 secureString.AppendChar(c);
 
             secureString.MakeReadOnly();

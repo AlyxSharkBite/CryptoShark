@@ -10,7 +10,7 @@ namespace CryptoSharkTests;
 public class CryptoSharkPasswordCryptographyTests
 {
     private static Mock<ILogger> _mockLogger = new Mock<ILogger>();
-    private readonly string _password = "Abc123";
+    private char[] _password = new char[] { 'A', 'b', 'c', '1', '2', '3' };
     private readonly ReadOnlyMemory<byte> _sampleData = new byte[7514];
 
     [SetUp]
@@ -37,8 +37,11 @@ public class CryptoSharkPasswordCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void EncryptionSuccessTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, password, 
             CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
@@ -57,8 +60,11 @@ public class CryptoSharkPasswordCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void EncryptionFailsInvalidParamsTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, password, 
             (CryptoShark.Enums.EncryptionAlgorithm) 15, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         Assert.Throws<CryptographicException>(() => provider.Encrypt(request));
@@ -67,13 +73,17 @@ public class CryptoSharkPasswordCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void DecryptionSuccessTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length);
+
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, _password, 
+        var request = SemetricEncryptionRequest.CreateRequest(_sampleData, password, 
             CryptoShark.Enums.EncryptionAlgorithm.Aes, CryptoShark.Enums.HashAlgorithm.SHA3_256);
 
         var encrypted = provider.Encrypt(request);
-
-        var decrypted = provider.Decrypt(encrypted, StringToSecureString(_password));
+                
+        Array.Copy(_password, password, _password.Length);
+        var decrypted = provider.Decrypt(encrypted, StringToSecureString(password));
         Assert.That(decrypted.IsEmpty, Is.False);
        
     }    
@@ -81,8 +91,11 @@ public class CryptoSharkPasswordCryptographyTests
     [TestCaseSource(nameof(CreateLoggers))]
     public void DecryptionFailsInvalidParamsTests(ILogger logger)
     {
+        var password = new char[_password.Length];
+        Array.Copy(_password, password, _password.Length); 
+
         var provider = CryptoSharkPasswordCryptography.Create(logger);
-        Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, StringToSecureString(_password)));
+        Assert.Throws<CryptographicException>(() => provider.Decrypt(ReadOnlyMemory<byte>.Empty, StringToSecureString(password)));
     }
 
     private static Array CreateLoggers()
@@ -90,10 +103,10 @@ public class CryptoSharkPasswordCryptographyTests
         return new[] { _mockLogger.Object, null };
     }
 
-    private static SecureString StringToSecureString(string s)
+    private static SecureString StringToSecureString(char[] s)
     {
         var ss = new SecureString();
-        foreach (var c in s.ToCharArray())
+        foreach (var c in s)
             ss.AppendChar(c);
 
         ss.MakeReadOnly();

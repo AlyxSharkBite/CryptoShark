@@ -23,7 +23,7 @@ namespace CryptoShark.Requests
         }
 
         private SemetricEncryptionRequest(
-            ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm? encryptionAlgorithm,
+            ReadOnlyMemory<byte> clearData, char[] password, EncryptionAlgorithm? encryptionAlgorithm,
             HashAlgorithm? hashAlgorithm, bool? compress)
         {
             ClearData = clearData;            
@@ -32,10 +32,12 @@ namespace CryptoShark.Requests
             CompressData = compress;
 
             Password = new SecureString();
-            foreach (var c in password.ToCharArray())
+            foreach (var c in password)
                 Password.AppendChar(c);
 
             Password.MakeReadOnly();
+
+            Array.Clear(password);
         }
 
         /// <inheritdoc />
@@ -56,7 +58,7 @@ namespace CryptoShark.Requests
         public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, SecureString password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, bool? compress = null) 
             => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm, compress);
         
-        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, string password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, bool? compress = null)
+        public static IEncryptionRequest CreateRequest(ReadOnlyMemory<byte> clearData, char[] password, EncryptionAlgorithm? encryptionAlgorithm = null, HashAlgorithm? hashAlgorithm = null, bool? compress = null)
             => new SemetricEncryptionRequest(clearData, password, encryptionAlgorithm, hashAlgorithm, compress);
     }
 }
