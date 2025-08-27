@@ -35,6 +35,14 @@
         * Example: 'OAEPWithSHA-256AndMGF1Padding'
  * Performance Enhancements
  * Added option to compress data before encryption useing [Huffman Coding](https://en.wikipedia.org/wiki/Huffman_coding)
+    * Huffman Coding is very fast even over large data and will only slightly reduce speed
+    * Benchmark on 1Mb Data on Intel Core Ultra 285 
+    ```
+    | Method                | Mean     | Error   | StdDev   |
+    |---------------------- |---------:|--------:|---------:|
+    | EncryptNoCompresstion | 108.5 ms | 8.41 ms | 24.79 ms |
+    | EncryptCompresstion   | 104.1 ms | 7.72 ms | 22.63 ms |
+    ```
 
  **Version 3.5.1**
  * Minor Security Enhancements 

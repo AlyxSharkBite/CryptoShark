@@ -20,9 +20,6 @@ namespace CryotSharkBenchmarks
             BenchmarkSwitcher
                 .FromAssembly(typeof(Program).Assembly)
                 .Run();
-            
-            
-
         }
     }
 }

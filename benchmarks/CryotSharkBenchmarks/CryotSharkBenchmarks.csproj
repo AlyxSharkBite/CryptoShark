@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.0.36313.1" />
+    <PackageReference Include="RandomDataGenerator.Net" Version="1.0.19.1" />
   </ItemGroup>
 
   <ItemGroup>
