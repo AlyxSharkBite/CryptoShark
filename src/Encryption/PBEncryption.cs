@@ -144,16 +144,16 @@ namespace CryptoShark
             }
         }
 
-        private Result<byte[], Exception> PasswordDeriveBytes(SecureString password, ReadOnlySpan<byte> salt, int keySize, int itterations)
+        private Result<byte[], Exception> PasswordDeriveBytes(SecureString password, ReadOnlySpan<byte> salt, int keySize, int iterations)
         {
             try
             {
-                using (var deriveyutes = new Rfc2898DeriveBytes(
+                return Rfc2898DeriveBytes.Pbkdf2(
                     Encoding.UTF8.GetBytes(_secureStringUtilities.SecureStringToCharArray(password)),
                     salt.ToArray(),
-                    itterations,
-                    HashAlgorithmName.SHA512))
-                    return deriveyutes.GetBytes(keySize / 8);
+                    iterations,
+                    HashAlgorithmName.SHA512,
+                    keySize / 8);                  
             }
             catch (Exception ex)
             {
